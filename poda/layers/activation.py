@@ -1,0 +1,186 @@
+import tensorflow as tf
+
+def crelu(input_tensor, names):
+    """[Concatenates a ReLU which selects only the positive part of the activation
+        with a ReLU which selects only the negative part of the activation 
+        Source: https://arxiv.org/abs/1603.05201]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing preactivation values]
+        name {[str]} -- [A name for the operation (optional)]  (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.crelu(features=input_tensor,name='activation_crelu_'+names,axis=-1)
+
+def define_activation_function(input_tensor, activation_name, names):
+    """[Determine the type of activation function]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing preactivation values]
+        activation_name {[str]} -- [Type of activation function]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+        
+    Returns:
+        [Tensor] -- [description]
+    """
+    if activation_name=="crelu":
+        output_tensor = tf.nn.crelu(features=input_tensor, name='activation_'+names, axis=-1)
+    elif activation_name=="elu":
+        output_tensor = tf.nn.elu(features=input_tensor, name='activation_'+names)
+    elif activation_name=="leakyRelu":
+        alpha=tf.constant(0.2, dtype=tf.float32)
+        output_tensor = tf.nn.leaky_relu(features=input_tensor, alpha=alpha, name='activation_'+names)
+    elif activation_name=="relu":
+        output_tensor = tf.nn.relu(features=input_tensor, name='activation_'+names)
+    elif activation_name=="relu6":
+        output_tensor = tf.nn.relu6(features=input_tensor, name='activation_'+names)
+    elif activation_name=="selu":
+        output_tensor = tf.nn.selu(features=input_tensor, name='activation_'+names)
+    elif activation_name=="sigmoid":
+        output_tensor = tf.nn.sigmoid(x=input_tensor, name='activation_'+names)
+    elif activation_name=="softmax":
+        output_tensor = tf.nn.softmax(logits=input_tensor, axis=None, name='activation_'+names, dim=None)
+    elif activation_name=="softsign":
+        output_tensor = tf.nn.softsign(features=input_tensor, name='activation_'+names)
+    elif activation_name=="tanh":
+        output_tensor = tf.nn.tanh(x=input_tensor, name='activation_'+names)
+    elif activation_name==None:
+        output_tensor = input_tensor
+    return output_tensor
+
+def elu(input_tensor, names):
+    """[Computes exponential linear: exp(features) - 1 if < 0, features otherwise
+        Source: https://arxiv.org/abs/1511.07289]
+    
+    Arguments:
+        input_tensor {[half, bfloat16, float32, float64]} -- [A Tensor representing preactivation values]
+        name {[str]} -- [A name for the operation (optional)]  (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.elu(features=input_tensor,name='activation_elu_'+names)
+
+def leaky_relu(input_tensor, names, alpha=0.2):
+    """[Compute the Leaky ReLU activation function
+        Source: https://ai.stanford.edu/~amaas/papers/relu_hybrid_icml2013_final.pdf]
+    
+    Arguments:
+        input_tensor {[float16, float32, float64, int32, int64]} -- [A Tensor representing preactivation values]
+        name {[str]} -- [A name for the operation (optional)]
+    
+    Keyword Arguments:
+        alpha {float} -- [Slope of the activation function at x < 0] (default: {0.2})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.leaky_relu(features=input_tensor,alpha=alpha,name='activation_lrelu_'+names)
+
+def relu(input_tensor, names):
+    """[Computes rectified linear: max(features, 0)]
+    
+    Arguments:
+        input_tensor {[float32, float64, int32, uint8, int16, int8, int64, bfloat16, uint16, half, uint32, uint64, qint8]} 
+                        -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.relu(features=input_tensor,name='activation_relu_'+names)
+
+def relu6(input_tensor, names):
+    """[Computes Rectified Linear 6: min(max(features, 0), 6)
+        Source: http://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.relu6(features=input_tensor,name='activation_relu6_'+names)
+
+def selu(input_tensor, names):
+    """[Computes scaled exponential linear: scale * alpha * (exp(features) - 1)
+        if < 0, scale * features otherwise]
+    
+    Arguments:
+        input_tensor {[half, bfloat16, float32, float64]} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.selu(features=input_tensor,name='activation_selu_'+names)
+
+def sigmoid(input_tensor , names):
+    """[Computes sigmoid of x element-wise.
+        Specifically, y = 1 / (1 + exp(-x))]
+    
+    Arguments:
+        input_tensor {[float16, float32, float64, complex64, or complex128]} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.sigmoid(x=input_tensor,name='activation_sigmoid_'+names)
+
+def softmax(input_tensor, names, axis=None, dim=None):
+    """[Computes softmax activations]
+    
+    Arguments:
+        input_tensor {[half, float32, float64]} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        axis {[int]} -- [The dimension softmax would be performed on. The default is -1 which indicates the last dimension.] (default: {None})
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+        dim {[int]} -- [Deprecated alias for axis] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.softmax(logits=input_tensor,axis=None,name='activation_softmax_'+names,dim=None)
+
+def softsign(input_tensor, names):
+    """[Computes softsign: features / (abs(features) + 1).]
+    
+    Arguments:
+        input_tensor {[half, bfloat16, float32, float64]} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.softsign(features=input_tensor,name='activation_softsign_'+names)
+
+def tanh(input_tensor, names):
+    """[Computes hyperbolic tangent of x element-wise]
+    
+    Arguments:
+        input_tensor {[bfloat16, half, float32, float64, complex64]} -- [A Tensor representing preactivation values]
+    
+    Keyword Arguments:
+        name {[str]} -- [A name for the operation (optional)] (default: {None})
+    
+    Returns:
+        [Tensor] -- [description]
+    """
+    return tf.nn.tanh(x=input_tensor,name='activation_tanh_'+names)
