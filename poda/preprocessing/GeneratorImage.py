@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import imutils
 import os
+from sklearn.utils import shuffle
 
 class GeneratorImage():
     def __init__(self):
@@ -69,8 +70,9 @@ class GeneratorImage():
             yield(image_data_batch,image_target_batch)
 
     def batch_generator_from_directory(self, path_directory, color_modes, batch_sizes, image_sizes=(512,512), rotation_degrees=None, flip_horizontal_status=False, flip_vertical_status=False, zoom_scales=None):
-        list_path_datas , list_target_datas = self.get_list_image_and_label(path_directory)
-        self.batch_generator(list_path_data=list_path_datas,list_target_data=list_target_datas,color_mode=color_modes,batch_size=batch_sizes,image_size=image_sizes,rotation_degree=rotation_degrees,flip_image_horizontal_status=flip_vertical_status,zoom_scale=zoom_scales)
+        list_path_image , list_target_image = self.get_list_image_and_label(path_directory)
+        list_path_image , list_target_image = shuffle(list_path_image, list_target_image, random_state=0)
+        return self.batch_generator(list_path_data=list_path_image,list_target_data=list_target_datas,color_mode=color_modes,batch_size=batch_sizes,image_size=image_sizes,rotation_degree=rotation_degrees,flip_image_horizontal_status=flip_vertical_status,zoom_scale=zoom_scales)
         
     def flip_image_horizontal(self, image):
         return cv2.flip(image,0)
