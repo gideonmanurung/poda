@@ -33,8 +33,9 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from poda.layers import *
-from poda.preprocessing import *
+from poda.layers.convolutional import *
+from poda.layers.dense import *
+from poda.layers.activation import *
 from poda.utils import *
 slim = tf.contrib.slim
 

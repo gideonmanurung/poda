@@ -13,6 +13,7 @@ class GeneratorImage():
 
     def batch_generator(self, list_path_data, list_target_data, color_mode,batch_size, image_size=(512,512), rotation_degree=None, flip_image_horizontal_status=False, flip_image_vertical_status=False, zoom_scale=None):
         counter_image = 0
+        number_class = np.amax(list_target_data)
         couter_rotation = 0 
         number_rotation = int(360/rotation_degree)
         while True:
@@ -64,8 +65,8 @@ class GeneratorImage():
 
             image_data_batch = np.array(image_data_batch)            
             image_data_batch = image_data_batch.reshape((batch_size*number_augmentation,image_size[0],image_size[1],3)).astype(np.float32)
-            image_target_batch = np.array(image_target_batch)
-            image_target_batch = image_target_batch.reshape((len(image_target_batch),1)).astype(np.float32)
+            image_target_batch = np.array(image_target_batch).reshape(-1)
+            image_target_batch = np.eye(number_class)[image_target_batch]
 
             yield(image_data_batch,image_target_batch)
 
