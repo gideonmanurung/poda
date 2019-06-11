@@ -6,11 +6,12 @@
 |Mei 2019    | poda is first update library                                                                                                     |     >=v0.1.0      |
 |Mei 2019    | poda is second update library                                                                                                     |     >=v0.1.1      |
 |Mei 2019    | poda is third update library                                                                                                     |     >=v0.1.2      |
+|June 2019    | poda is fourth update library                                                                                                     |     >=v0.1.3      |
 
 ### Tensorflow Compatibility
 | Tensorflow version      |        Poda Version      |   
 | ----------------------- | --------------------------------- | 
-| 1.12.0                  |      >=v0.1.2                     |
+| 1.12.0                  |      >=v0.1.3                     |
 
 
 

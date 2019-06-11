@@ -101,7 +101,7 @@ def vgg16(input_tensor,num_classes=1000,
         num_blocks=5,is_training=False,num_depthwise_layer=None,
         num_fully_connected_layer=1,num_hidden_unit=512,
         activation_fully_connected=None,regularizers=None):
-    net = build_base_layer_model(input_tensor=input_tensor,num_blocks=num_blocks,is_training=is_training)
+    net = build_base_layer_model(input_tensor=input_tensor,num_blocks=num_blocks)
     var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
     non_logit , top_layer_vgg = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,
                                                     num_fully_connected_layer=num_fully_connected_layer,
