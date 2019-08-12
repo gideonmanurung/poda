@@ -3,6 +3,21 @@ from poda.layers.activation_function import *
 from poda.layers.dense import *
 from poda.layer.regularizer import *
 
+def batch_normalization(input_tensor,is_trainable=True):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[type]} -- [A Tensor representing prelayer]
+    
+    Keyword Arguments:
+        is_trainable {bool} -- [description] (default: {True})
+    """
+    layer = tf.layers.batch_normalization(inputs=input_tensor,axis=-1,momentum=0.99,epsilon=0.001,center=True,scale=True,beta_initializer=tf.zeros_initializer(),
+                                            gamma_initializer=tf.ones_initializer(),moving_mean_initializer=tf.zeros_initializer(),moving_variance_initializer=tf.ones_initializer(),
+                                            beta_regularizer=None,gamma_regularizer=None,beta_constraint=None,gamma_constraint=None,training=False,trainable=is_trainable,name=None,reuse=None,
+                                            renorm=False,renorm_clipping=None,renorm_momentum=0.99,fused=None,virtual_batch_size=None,adjustment=None)
+    return layer
+
 def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), padding='valid', activation='relu', dropout_layers=None, names=None):
     """[summary]
     
