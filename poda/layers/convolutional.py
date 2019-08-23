@@ -1,7 +1,7 @@
 import tensorflow as tf
 from poda.layers.activation import *
 from poda.layers.dense import *
-from poda.layer.regularizer import *
+from poda.layers.regularizer import *
 
 def batch_normalization(input_tensor,is_trainable=True):
     """[summary]

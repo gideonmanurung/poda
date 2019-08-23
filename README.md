@@ -4,12 +4,17 @@
 | Date       |                                                         News                                                                     |     Version       |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------- |       
 |Mei 2019    | poda is first update library                                                                                                     |     >=v0.1.0      |
-|August 2019 | poda is second update library                                                                                                     |     >=v0.1.1      |
+|Mei 2019    | poda is second update library                                                                                                    |     >=v0.1.1      |
+|Mei 2019    | poda is third update library                                                                                                     |     >=v0.1.2      |
+|June 2019    | poda is fourth update library                                                                                                   |     >=v0.1.3      |
+|June 2019    | poda is sixth update library                                                                                                    |     >=v0.1.4      |
+|August 2019  | poda is second version and add Object detection                                                                                 |     >=v0.2.0      |
+|August 2019  | Adding segmentation model                                                                                                       |     >=v0.2.1      |
 
 ### Tensorflow Compatibility
 | Tensorflow version      |        Poda Version      |   
 | ----------------------- | --------------------------------- | 
-| 1.12.0                  |      >=v0.1.1                     |
+| 1.12.0                  |      >=v0.2.1                     |
 
 
 
@@ -76,7 +81,6 @@ We already prepared the all in one docker for computer vision and deep learning 
 * https://github.com/gideonmanurung/docker_utils/tree/without_gpu/docker_16.04
 ##### Docker: Ubuntu 18.04 without GPU (Cuda 9, cudnn 7.2) [TESTED]
 * https://github.com/gideonmanurung/docker_utils/tree/without_gpu/docker_18.04
-
 
 
 
