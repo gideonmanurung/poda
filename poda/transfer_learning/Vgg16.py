@@ -78,13 +78,12 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
                                                       kernel_size=(3,3), stride_size=(2,2), padding='same',
                                                       activation_function='relu',name='depthwise_conv2d_'+str(i))
             previous_layer = depth_wise_net
-            #depth_wise_net = nn.max_pool_2d(input_tensor=depth_wise_net)
     else:
         depth_wise_net = previous_layer
 
     flatten_layer = flatten(input_tensor=depth_wise_net)
 
-    if num_fully_connected_layer > 0:
+    if num_fully_connected_layer !=None:
         for j in range(num_fully_connected_layer):
             fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
                                                   activation_function=activation_fully_connected,
@@ -94,8 +93,11 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
     else:
         flatten_layer = flatten_layer
 
-    non_logit = fully_connected(input_tensor=fully_connected_net,hidden_unit=num_classes,activation_function=None)
-    output = sigmoid(input_tensor=non_logit)
+    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
+    if num_classes > 2:
+        output = softmax(input_tensor=non_logit)
+    else:
+        output = sigmoid(input_tensor=non_logit)
     return non_logit, output
     
 def vgg16(input_tensor,num_classes=1000,

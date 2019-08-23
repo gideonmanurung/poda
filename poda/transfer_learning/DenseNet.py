@@ -25,6 +25,8 @@ import tensorflow as tf
 
 slim = tf.contrib.slim
 
+from poda.layers.activation import *
+from poda.layers.dense import *
 
 @slim.add_arg_scope
 def _global_avg_pool2d(inputs, data_format='NHWC', scope=None, outputs_collections=None):
@@ -101,6 +103,39 @@ def _transition_block(inputs, num_filters, compression=1.0,
   return net, num_filters
 
 
+def build_top_layer_model(base_layer,num_classes,num_depthwise_layer=None,
+                          num_fully_connected_layer=1,num_hidden_unit=512,
+                          activation_fully_connected='relu',dropout_keep_prob=None,regularizers=None,num_classes=1000):
+    previous_layer = base_layer
+    if num_depthwise_layer != None:
+        num_depthwise_layer = num_depthwise_layer * 3
+        for i in range(num_depthwise_layer):
+            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
+                                                      kernel_size=(3,3), stride_size=(2,2), padding='same',
+                                                      activation_function='relu',name='depthwise_conv2d_'+str(i))
+            previous_layer = depth_wise_net
+    else:
+        depth_wise_net = previous_layer
+
+    flatten_layer = flatten(input_tensor=depth_wise_net)
+
+    if num_fully_connected_layer != None:
+        for j in range(num_fully_connected_layer):
+            fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
+                                                  activation_function=activation_fully_connected,
+                                                  dropout_layer=dropout_keep_prob,regularizers=regularizers,
+                                                  scale=dropout_keep_prob,name='fully_connected_'+str(j))
+            flatten_layer = fully_connected_net
+    else:
+        flatten_layer = flatten_layer
+
+    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
+    if num_classes > 2:
+      output = softmax(input_tensor=non_logit)
+    else:
+      output = sigmoid(input_tensor=non_logit)
+    return non_logit, output
+
 def densenet(inputs,
              num_classes=1000,
              reduction=None,
@@ -157,10 +192,20 @@ def densenet(inputs,
               growth_rate,
               scope='dense_block' + str(num_dense_blocks))
 
-      return net
+  var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+
+  non_logit , top_layer = build_top_layer_model(net,num_classes=num_classes,num_depthwise_layer=num_depthwise_layer,
+                                                    num_fully_connected_layer=num_fully_connected_layer,
+                                                    num_hidden_unit=num_hidden_unit,
+                                                    activation_fully_connected=activation_fully_connected,regularizers=regularizers)
+
+  return var_list , non_logit , top_layer
 
 
-def densenet121(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None):
+def densenet121(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None,
+                num_depthwise_layer=None,num_fully_connected_layer=None,
+                num_hidden_unit=None,activation_fully_connected=None,
+                regularizers=None):
   return densenet(inputs,
                   num_classes=num_classes, 
                   reduction=0.5,
@@ -174,7 +219,10 @@ def densenet121(inputs, num_classes=1000, data_format='NHWC', is_training=True, 
 densenet121.default_image_size = 224
 
 
-def densenet161(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None):
+def densenet161(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None,
+                num_depthwise_layer=None,num_fully_connected_layer=None,
+                num_hidden_unit=None,activation_fully_connected=None,
+                regularizers=None):
   return densenet(inputs,
                   num_classes=num_classes, 
                   reduction=0.5,
@@ -188,7 +236,10 @@ def densenet161(inputs, num_classes=1000, data_format='NHWC', is_training=True, 
 densenet161.default_image_size = 224
 
 
-def densenet169(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None):
+def densenet169(inputs, num_classes=1000, data_format='NHWC', is_training=True, reuse=None,
+                num_depthwise_layer=None,num_fully_connected_layer=None,
+                num_hidden_unit=None,activation_fully_connected=None,
+                regularizers=None):
   return densenet(inputs,
                   num_classes=num_classes, 
                   reduction=0.5,

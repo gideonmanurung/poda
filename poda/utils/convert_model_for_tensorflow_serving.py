@@ -1,13 +1,13 @@
-nsimport tensorflow as tf
+import tensorflow as tf
 import os
-import toba.tranfer_learning.Vgg16 as vgg
+import poda.tranfer_learning.Vgg16 as vgg
 
-def convert_model(model_path=''):
+def convert_model_vggg16(model_path=''):
         input_string = tf.placeholder(tf.string, shape=[None], name='string_input')
         decode = lambda raw_byte_str: tf.image.resize_images(
                                             tf.cast(
                                                 tf.image.decode_jpeg(raw_byte_str, channels=3, name='decoded_image'),
-                                                    tf.int8),
+                                                    tf.uint8),
                                             [340, 340])
 
         input_images = tf.map_fn(decode, input_string, dtype=tf.float32)
@@ -47,7 +47,3 @@ def convert_model(model_path=''):
             },
             legacy_init_op=legacy_init_op)
             builder.save()
-
-if __name__ == "__main__":
-    model_path = os.path.join(os.getcwd(),'') #path model
-    convert_model(model_path=model_path)

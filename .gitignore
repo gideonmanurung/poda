@@ -3,3 +3,4 @@ build/
 poda.egg-info/
 dist/
 checkpoint/
+env

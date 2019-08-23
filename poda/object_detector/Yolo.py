@@ -1,18 +1,13 @@
 import json
 import random
 import tensorflow as tf
-from simple_tensor.tensor_operations import *
-from simple_tensor.object_detector.detector_utils import *
-from simple_tensor.transfer_learning.inception_utils import *
-from simple_tensor.transfer_learning.inception_v4 import *
-from comdutils.file_utils import *
+from poda.layers.convolutional import *
+from poda.layers.dense import *
+from poda.layers.activation import *
+from poda.object_detector.utils import *
 
 
-# =============================================== #
-# This class is the child of ObjectDetector class #
-# in simple_tensor.object_detector.detector_utils #
-# =============================================== #
-class Yolo(ObjectDetector):
+class YoloV3(ObjectDetector):
     def __init__(self,
                  dataset_folder_path,
                  label_folder_path,  
