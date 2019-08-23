@@ -14,7 +14,10 @@ setup(
     long_description_content_type='text/markdown',
     author='gideonmanurung',  # Optional
     author_email='gideonmanurung3@gmail.com', #optional
-    packages=["poda", 
+    packages=["poda",
+              "poda.object_detector",
+              "poda.rnn_packs",
+              "poda.segmentation",
               "poda.transfer_learning", 
               "poda.preprocessing", 
               "poda.layers",

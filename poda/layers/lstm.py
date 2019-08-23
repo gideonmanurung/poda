@@ -1,6 +1,8 @@
 import tensorflow as tf
 from itertools import chain
-from simple_tensor.tensor_operations import * 
+from poda.layer.dense import *
+from poda.layer.regularizer import *
+from poda.layer.activation import *
 import numpy as np
 
 
