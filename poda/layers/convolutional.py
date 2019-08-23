@@ -1,5 +1,5 @@
 import tensorflow as tf
-from poda.layers.activation_function import *
+from poda.layers.activation import *
 from poda.layers.dense import *
 from poda.layer.regularizer import *
 

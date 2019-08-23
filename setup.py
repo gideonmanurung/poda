@@ -9,14 +9,13 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 setup(
     name='poda',  # Required
     version=version,  # Required
-    description='A package for simplify tensorflow code',  # Required
+    description='A package to wrap tensor operation',  # Required
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='gideonmanurung',  # Optional
     author_email='gideonmanurung3@gmail.com', #optional
     packages=["poda",
               "poda.object_detector",
-              "poda.rnn_packs",
               "poda.segmentation",
               "poda.transfer_learning", 
               "poda.preprocessing", 
