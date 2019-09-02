@@ -6,23 +6,23 @@ from sklearn.utils import shuffle
 
 class GeneratorImage():
     def __init__(self):
-        self.pathDirectory=''
-        self.batchSize=0
-        self.colorMode=''
-        self.imageSize=(512,512)
+        self.path_directory=''
+        self.batch_sizes=0
+        self.color_modes=''
+        self.image_sizes=(512,512)
 
-    def batch_generator(self, list_path_data, list_target_data, color_mode,batch_size, image_size=(512,512), rotation_degree=None, flip_image_horizontal_status=False, flip_image_vertical_status=False, zoom_scale=None):
+    def batch_generator(self, list_path_data, list_target_data, color_modes,batch_sizes, image_sizes=(512,512), rotation_degrees=None, flip_image_horizontal_status=False, flip_image_vertical_status=False, zoom_scales=None):
         counter_image = 0
         number_class = np.amax(list_target_data)
         couter_rotation = 0 
-        number_rotation = int(360/rotation_degree)
+        number_rotation = int(360/rotation_degrees)
         while True:
             image_data_batch = []
             image_target_batch = []
             for i in range(batch_size):
                 number_augmentation = 1
                 image_file = list_path_data[counter_image]
-                if color_mode=='grayscale':
+                if color_modes=='grayscale':
                     image = cv2.imread(image_file,0)
                 else:
                     image = cv2.imread(image_file)
@@ -32,11 +32,11 @@ class GeneratorImage():
 
                 image_data_batch.append(image)
                 image_target_batch.append(list_target_data[counter_image])
-                if rotation_degree!=None:
+                if rotation_degrees!=None:
                     for j in range(number_rotation):
-                        radian_rotation = rotation_degree
+                        radian_rotation = rotation_degrees
                         image_rotation = self.rotate_image(image, radian_rotation)
-                        radian_rotation += rotation_degree
+                        radian_rotation += rotation_degrees
                         image_data_batch.append(image_rotation)
                         image_target_batch.append(list_target_data[counter_image])
                         number_augmentation += 1
@@ -53,8 +53,8 @@ class GeneratorImage():
                     image_target_batch.append(list_target_data[counter_image])
                     number_augmentation += 1
 
-                if zoom_scale!=None:
-                    image_zoom = self.zoom_image(image,zoom_scale)
+                if zoom_scales!=None:
+                    image_zoom = self.zoom_image(image,zoom_scales)
                     image_data_batch.append(image_zoom)
                     image_target_batch.append(list_target_data[counter_image])
                     number_augmentation += 1
@@ -73,7 +73,7 @@ class GeneratorImage():
     def batch_generator_from_directory(self, path_directory, color_modes, batch_sizes, image_sizes=(512,512), rotation_degrees=None, flip_horizontal_status=False, flip_vertical_status=False, zoom_scales=None):
         list_path_image , list_target_image = self.get_list_image_and_label(path_directory)
         list_path_image , list_target_image = shuffle(list_path_image, list_target_image, random_state=0)
-        return self.batch_generator(list_path_data=list_path_image,list_target_data=list_target_datas,color_mode=color_modes,batch_size=batch_sizes,image_size=image_sizes,rotation_degree=rotation_degrees,flip_image_horizontal_status=flip_vertical_status,zoom_scale=zoom_scales)
+        return self.batch_generator(list_path_data=list_path_image,list_target_data=list_target_datas,color_modes=color_modes,batch_size=batch_sizes,image_size=image_sizes,rotation_degrees=rotation_degrees,flip_image_horizontal_status=flip_vertical_status,zoom_scales=zoom_scales)
         
     def flip_image_horizontal(self, image):
         return cv2.flip(image,0)
@@ -101,21 +101,21 @@ class GeneratorImage():
         list_target_dataset = np.reshape(list_target_dataset,len(list_path_dataset))
         return list_path_dataset, list_target_dataset
 
-    def rotate_image(self, image, rotation_degree=90):
-        return imutils.rotate(image, rotation_degree)
+    def rotate_image(self, image, rotation_degrees=90):
+        return imutils.rotate(image, rotation_degrees)
 
-    def split_dataset(self, list_path_data, list_target_data, split_size=0.8):
-        limit = int(len(list_path_data) * split_size) + 1
+    def split_dataset(self, list_path_data, list_target_data, split_sizes=0.8):
+        limit = int(len(list_path_data) * split_sizes) + 1
         train_list_path_data = list_path_data[:limit]
         val_list_path_data = list_path_data[limit:]
         train_list_target_data = list_target_data[:limit]
         val_list_target_data = list_target_data[limit:]
         return train_list_path_data, train_list_target_data, val_list_path_data, val_list_target_data
 
-    def zoom_image(self, image, zoom_scale=0.3):
+    def zoom_image(self, image, zoom_scales=0.3):
         height, width, channels = image.shape
         center_x,center_y=int(height/2),int(width/2)
-        radius_x,radius_y= int(zoom_scale*height/100),int(zoom_scale*width/100)
+        radius_x,radius_y= int(zoom_scales*height/100),int(zoom_scales*width/100)
         min_x,max_x=center_x-radius_x,center_x+radius_x
         min_y,max_y=center_y-radius_y,center_y+radius_y
         cropped = image[min_x:max_x, min_y:max_y]

@@ -75,8 +75,8 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
         num_depthwise_layer = num_depthwise_layer * 3
         for i in range(num_depthwise_layer):
             depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
-                                                      kernel_size=(3,3), stride_size=(2,2), padding='same',
-                                                      activation_function='relu',name='depthwise_conv2d_'+str(i))
+                                                      kernel_sizes=(3,3), stride_sizes=(2,2), padding='same',
+                                                      activation='relu',names='depthwise_conv2d_'+str(i))
             previous_layer = depth_wise_net
     else:
         depth_wise_net = previous_layer

@@ -14,12 +14,12 @@ def crelu(input_tensor, names):
     """
     return tf.nn.crelu(features=input_tensor,name='activation_crelu_'+names,axis=-1)
 
-def define_activation_function(input_tensor, activation_name, names):
+def define_activation_function(input_tensor, activation_names, names):
     """[Determine the type of activation function]
     
     Arguments:
         input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing preactivation values]
-        activation_name {[str]} -- [Type of activation function]
+        activation_names {[str]} -- [Type of activation function]
     
     Keyword Arguments:
         name {[str]} -- [A name for the operation (optional)] (default: {None})
@@ -27,28 +27,28 @@ def define_activation_function(input_tensor, activation_name, names):
     Returns:
         [Tensor] -- [description]
     """
-    if activation_name=="crelu":
+    if activation_names=="crelu":
         output_tensor = tf.nn.crelu(features=input_tensor, name='activation_'+names, axis=-1)
-    elif activation_name=="elu":
+    elif activation_names=="elu":
         output_tensor = tf.nn.elu(features=input_tensor, name='activation_'+names)
-    elif activation_name=="leakyRelu":
+    elif activation_names=="leakyRelu":
         alpha=tf.constant(0.2, dtype=tf.float32)
         output_tensor = tf.nn.leaky_relu(features=input_tensor, alpha=alpha, name='activation_'+names)
-    elif activation_name=="relu":
+    elif activation_names=="relu":
         output_tensor = tf.nn.relu(features=input_tensor, name='activation_'+names)
-    elif activation_name=="relu6":
+    elif activation_names=="relu6":
         output_tensor = tf.nn.relu6(features=input_tensor, name='activation_'+names)
-    elif activation_name=="selu":
+    elif activation_names=="selu":
         output_tensor = tf.nn.selu(features=input_tensor, name='activation_'+names)
-    elif activation_name=="sigmoid":
+    elif activation_names=="sigmoid":
         output_tensor = tf.nn.sigmoid(x=input_tensor, name='activation_'+names)
-    elif activation_name=="softmax":
+    elif activation_names=="softmax":
         output_tensor = tf.nn.softmax(logits=input_tensor, axis=None, name='activation_'+names, dim=None)
-    elif activation_name=="softsign":
+    elif activation_names=="softsign":
         output_tensor = tf.nn.softsign(features=input_tensor, name='activation_'+names)
-    elif activation_name=="tanh":
+    elif activation_names=="tanh":
         output_tensor = tf.nn.tanh(x=input_tensor, name='activation_'+names)
-    elif activation_name==None:
+    elif activation_names==None:
         output_tensor = input_tensor
     return output_tensor
 

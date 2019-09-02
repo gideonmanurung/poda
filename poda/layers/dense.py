@@ -18,14 +18,14 @@ def new_weights(shapes, names, random_types='truncated_normal', dtypes=tf.float3
         [float32] -- [A trainable tensor]
     """
     if random_types=='random_normal':
-        initial_weight = tf.random_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=tf.float32,seed=None)
+        initial_weight = tf.random_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
     elif random_types=='random_uniform':
-        initial_weight = tf.random_uniform(shape=shapes,minval=0,maxval=None,dtype=tf.float32,seed=None)
+        initial_weight = tf.random_uniform(shape=shapes,minval=0,maxval=None,dtype=dtypes,seed=None)
     else:
-        initial_weight = tf.truncated_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=tf.float32,seed=None)
+        initial_weight = tf.truncated_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
     return tf.Variable(initial_weight, dtype=dtypes, name='weight_'+names)
 
-def new_biases(shapes, names, dtypes=tf.float32):
+def new_biases(shapes, names, bias_initializers='NOTZERO', dtypes=tf.float32):
     """[Create a new trainable tensor as bias]
     
     Arguments:
@@ -38,9 +38,14 @@ def new_biases(shapes, names, dtypes=tf.float32):
     Returns:
         [float32] -- [A trainable tensor]
     """
-    return tf.Variable(tf.constant(0.05, shape=[shapes], dtype=dtypes), dtype=dtypes, name='bias_'+names)
+    if bias_initializers=='ZERO':
+        initial_bias = tf.zeros(shape=shapes, dtype=dtypes, name=name)
+    else:
+        initial_bias = tf.constant(0.05, shape=shapes, dtype=dtypes)
 
-def fully_connected(input_tensor, hidden_units, names, activation=None, regularizers=None, scale=0.2):
+    return tf.Variable(initial_bias, dtype=dtypes, name='bias_'+names)
+
+def fully_connected(input_tensor, hidden_units, names, activations=None, regularizers=None, scale=0.2, bias_initializers='ZERO'):
     """[Create a new trainable Fully Connected layer]
     
     Arguments:
@@ -56,27 +61,14 @@ def fully_connected(input_tensor, hidden_units, names, activation=None, regulari
     Returns:
         [Tensor] -- [A trainable tensor]
     """
-    #num_input , num_output = input_tensor.shape
-    #weight = new_weights(shapes=[num_output, hidden_units], names=names)
-    #bias = new_biases(shapes=hidden_units, names=names)
+    weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
 
-    #layer = tf.matmul(input_tensor, weight)
-    #layer += bias
+    bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=names, bias_initializers=bias_initializers)
 
-    layer = tf.layers.dense(inputs=input_tensor,units=hidden_units,activation=None,
-                                use_bias=True,
-                                kernel_initializer=None,
-                                bias_initializer=tf.zeros_initializer(),
-                                kernel_regularizer=None,
-                                bias_regularizer=None,
-                                activity_regularizer=None,
-                                kernel_constraint=None,
-                                bias_constraint=None,
-                                trainable=True,
-                                name=names,
-                                reuse=None)
+    layer = tf.matmul(input_tensor, weight)
+    layer += bias
 
-    if activation!=None:
+    if activations!=None:
         layer = define_activation_function(input_tensor=layer, activation_name=activation, names=names)
     else:
         layer = layer
