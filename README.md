@@ -10,11 +10,12 @@
 |June 2019    | poda is sixth update library                                                                                                    |     >=v0.1.4      |
 |August 2019  | poda is second version and add Object detection                                                                                 |     >=v0.2.0      |
 |August 2019  | Adding segmentation model                                                                                                       |     >=v0.2.1      |
+|September 2019| Fixing tensor shape and rewrite parameters name                                                                                |     >=v0.2.2      |
 
 ### Tensorflow Compatibility
 | Tensorflow version      |        Poda Version      |   
 | ----------------------- | --------------------------------- | 
-| 1.12.0                  |      >=v0.2.1                     |
+| 1.14.0                  |      >=v0.2.2                     |
 
 
 
@@ -22,7 +23,7 @@
 This is a package to simplify tensorflow operations
 
 ### DEPENDENCIES
-1. Tensorflow (1.12.0)
+1. Tensorflow (1.14.0)
 
 For installing tensorflow, with GPU:
 ```python
