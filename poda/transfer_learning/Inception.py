@@ -63,13 +63,15 @@ class InceptionV4ResnetV2(object):
             [type] -- [description]
         """
         with tf.variable_scope(scope, 'StemBlock', [input_tensor], reuse=reuse):
-            conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), strides=(2, 2), batch_normalization=batch_normalization)        
-            conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
+            conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), strides=(2, 2), batch_normalization=batch_normalization, name='0_3x3')
+
+            conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization, name='0_3x3')
             
-            conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
-            conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization)
+            conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization, name='0_3x3')
             
+            conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization, name='0b_3x3')
             max_pool_1 = max_pool_2d(input_tensor=conv_3, pool_sizes=(3,3), stride_sizes=(2,2))
+
             concat_1 = tf.concat([conv_4, max_pool_1], -1)
 
             conv_5 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
