@@ -61,6 +61,11 @@ def fully_connected(input_tensor, hidden_units, names, activations=None, regular
     Returns:
         [Tensor] -- [A trainable tensor]
     """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
     weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
 
     bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=names, bias_initializers=bias_initializers)

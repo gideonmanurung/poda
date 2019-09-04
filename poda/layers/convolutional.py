@@ -3,7 +3,7 @@ from poda.layers.activation import *
 from poda.layers.dense import *
 from poda.layers.regularizer import *
 
-def batch_normalization(input_tensor,is_trainable=True):
+def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon = 1e-3):
     """[summary]
     
     Arguments:
@@ -12,13 +12,22 @@ def batch_normalization(input_tensor,is_trainable=True):
     Keyword Arguments:
         is_trainable {bool} -- [description] (default: {True})
     """
-    layer = tf.layers.batch_normalization(inputs=input_tensor,axis=-1,momentum=0.99,epsilon=0.001,center=True,scale=True,beta_initializer=tf.zeros_initializer(),
-                                            gamma_initializer=tf.ones_initializer(),moving_mean_initializer=tf.zeros_initializer(),moving_variance_initializer=tf.ones_initializer(),
-                                            beta_regularizer=None,gamma_regularizer=None,beta_constraint=None,gamma_constraint=None,training=False,trainable=is_trainable,name=None,reuse=None,
-                                            renorm=False,renorm_clipping=None,renorm_momentum=0.99,fused=None,virtual_batch_size=None,adjustment=None)
-    return layer
+    scale = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]))
+    beta = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]))
+    pop_mean = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]), trainable=False)
+    pop_var = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]), trainable=False)
 
-def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='VALID', activations='relu', dropout_layers=None, names=None):
+    if is_trainable:
+        batch_mean, batch_var = tf.nn.moments(input_tensor,[0])
+        train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
+        train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
+
+        with tf.control_dependencies([train_mean, train_var]):
+            return tf.nn.batch_normalization(input_tensor, batch_mean, batch_var, beta, scale, epsilon)
+    else:
+        return tf.nn.batch_normalization(input_tensor, pop_mean, pop_var, beta, scale, epsilon)
+
+def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
     """[summary]
     
     Arguments:
@@ -28,7 +37,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     Keyword Arguments:
         kernel_sizes {int} -- [description] (default: {3})
         stride_sizes {tuple} -- [description] (default: {(1,1)})
-        padding {str} -- [description] (default: {'valid'})
+        paddings {str} -- [description] (default: {'same'})
         activation {str} -- [description] (default: {'relu'})
         dropout_layers {[type]} -- [description] (default: {None})
         name {[str]} -- [Name of the layer] (default: {None})
@@ -36,14 +45,21 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     Returns:
         [Tensor] -- [Layer convolution 1D with dtype tf.float32]
     """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
     weight = new_weights(shapes=[kernel_sizes, input_tensor.get_shape().as_list()[2], number_filters], names=names)
 
-    if names!=None:
-        names = 'conv_2d_'+str(names)
-    else:
-        names = 'conv_2d'
-
-    layer = tf.nn.conv1d(value=input_tensor, filters=weight, stride=stride_sizes[0], padding=padding, use_cudnn_on_gpu=True, data_format=None, name='conv_1d_'+names)
+    layer = tf.nn.conv1d(value=input_tensor, filters=weight, stride=stride_sizes[0], padding=paddings, use_cudnn_on_gpu=True, data_format=None, name='conv_1d_'+names)
 
     if activations!=None:
         layer = define_activation_function(input_tensor=layer, activation_name=activations, names=names)
@@ -56,7 +72,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
         layer = layer
     return layer
 
-def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='VALID', activations='relu', dropout_layers=None, names=None):
+def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
     """[This function creates a convolution kernel that is convolved (actually cross-correlated) with the layer input to produce a tensor of outputs]
     
     Arguments:
@@ -66,7 +82,7 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     Keyword Arguments:
         kernel_sizes {int} -- [description] (default: {(3,3)})
         stride_sizes {tuple} -- [description] (default: {(1,1)})
-        padding {str} -- [description] (default: {'VALID'})
+        paddings {str} -- [description] (default: {'same'})
         activation {str} -- [description] (default: {'relu'})
         dropout_layer {[float]} -- [description] (default: {None})
         name {[str]} -- [Name of the layer] (default: {None})
@@ -74,18 +90,25 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     Returns:
         [Tensor] -- [Layer convolution 2D with dtype tf.float32]
     """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
     weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
 
-    if names!=None:
-        names = 'conv_2d_'+str(names)
-    else:
-        names = 'conv_2d'
-
-    layer = tf.nn.conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=padding, use_cudnn_on_gpu=True,
+    layer = tf.nn.conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, use_cudnn_on_gpu=True,
                          data_format='NHWC', dilations=[1, 1, 1, 1], name='conv_2d_'+names)
 
     if activations!=None:
-        layer = define_activation_function(input_tensor=layer, activation_name=activations, names=names)
+        layer = define_activation_function(input_tensor=layer, activation_names=activations, names=names)
     else:
         layer = layer
 
@@ -95,7 +118,7 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
         layer = layer
     return layer
 
-def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_sizes=(1,1), paddings='VALID', activations='relu', dropout_layers=None, names=None):
+def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
     """[summary]
     
     Arguments:
@@ -105,17 +128,24 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     Keyword Arguments:
         kernel_sizes {tuple} -- [description] (default: {(3,3,3)})
         stride_sizes {tuple} -- [description] (default: {(1,1)})
-        paddings {str} -- [description] (default: {'VALID'})
+        paddings {str} -- [description] (default: {'same'})
         activations {str} -- [description] (default: {'relu'})
         dropout_layers {[type]} -- [description] (default: {None})
         names {[type]} -- [description] (default: {None})
-    """
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
-    
+    """    
     if names!=None:
-        names = 'conv_2d_'+str(names)
+        names = str(names)
     else:
-        names = 'conv_2d'
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
 
     layer = tf.nn.conv3d(input,filter,strides=[stride_sizes[0],stride_sizes[1],stride_sizes],padding=paddings,data_format='NDHWC',dilations=[1, 1, 1, 1, 1],name='conv_3d_'+names)
     
@@ -131,7 +161,7 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
 
     return layer
 
-def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='VALID', activations='relu', dropout_layers=None, names=None):
+def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
     """[Function for adding depthwise convolution 2D layer]
     
     Arguments:
@@ -141,7 +171,7 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
     Keyword Arguments:
         kernel_size {int , int} -- [Size of kernel] (default: {(3,3)})
         stride_size {int , int} -- [Size of striding of kernel] (default: {(1,1)})
-        padding {str} -- [Type of padding. Ex. same and valid] (default: {'valid'})
+        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
         activation_function {str} -- [Type of activation function in layer] (default: {'relu'})
         dropout_layer {[float]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
         name {[str]} -- [Name of the layer] (default: {None})
@@ -149,12 +179,19 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
     Returns:
         [Tensor] -- [Layer depthwise convolution 2D with dtype tf.float32]
     """
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
-
     if names!=None:
-        names = 'conv_2d_'+str(names)
+        names = str(names)
     else:
-        names = 'conv_2d'
+        names = ''
+    
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
 
     layer = tf.nn.depthwise_conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, rate=None, name='deptwise_conv_2d_'+names, data_format=None )
 
@@ -167,4 +204,85 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
         layer = dropout(input_tensor=layer, names=names)
     else:
         layer = layer
+    return layer
+
+def max_pool_1d(input_tensor, pool_sizes=(2), stride_sizes=(1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer values]
+    
+    Keyword Arguments:
+        pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
+        name {[str]} -- [Name of the layer] (default: {None})
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.max_pool1d(input=input_tensor, ksize=pool_sizes, strides=stride_sizes, padding=paddings,name=None)
+    return layer
+
+def max_pool_2d(input_tensor, pool_sizes=(2,2), stride_sizes=(1,1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer values]
+    
+    Keyword Arguments:
+        pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
+        name {[str]} -- [Name of the layer] (default: {None})
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.max_pool2d(input=input_tensor, ksize=pool_sizes, strides=stride_sizes, padding=paddings,name=names)
+    return layer
+
+def max_pool_3d(input_tensor, pool_sizes=(2,2,2), stride_sizes=(1,1,1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer values]
+    
+    Keyword Arguments:
+        pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
+        name {[str]} -- [Name of the layer] (default: {None})
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.max_pool3d(input=input_tensor, ksize=pool_sizes, strides=stride_sizes, padding=paddings,name=None)
     return layer

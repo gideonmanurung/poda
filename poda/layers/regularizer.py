@@ -13,12 +13,17 @@ def dropout(input_tensor, names, dropout_rates=0.2):
     Returns:
         [Tensor] -- [A layer with dropout and dtype tf.float32]
     """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
     dropout_rates = 1 - dropout_rates
     return tf.nn.dropout(x=input_tensor, rate=dropout_rates, noise_shape=None,
                             seed=None,
                             name='dropout_'+names)
 
-def l1_regularization(input_tensor):
+def l1_regularization(input_tensor, scope):
     """[Create a l1 regularization in a layer]
     
     Arguments:
@@ -29,7 +34,7 @@ def l1_regularization(input_tensor):
     """
     return tf.contrib.layers.l1_regularizer(scale=input_tensor,scope=None)
 
-def l2_regularization(input_tensor):
+def l2_regularization(input_tensor, scope):
     """[Create a l2 regularization in a layer]
     
     Arguments:

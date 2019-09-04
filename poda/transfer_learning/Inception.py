@@ -25,6 +25,7 @@ class InceptionV4ResnetV2(object):
                    padding='VALID',  
                    dropout_rate=0.2, 
                    activation='relu',
+                   name=None,
                    batch_normalization=True):
         """[summary]
         
@@ -45,14 +46,14 @@ class InceptionV4ResnetV2(object):
             [type] -- [description]
         """
         conv = convolution_2d(input_tensor=inputs, number_filters=filters, kernel_sizes=kernel_size, 
-                              stride_sizes=strides, paddings=padding, activations=activation)
+                              stride_sizes=strides, paddings=padding, activations=activation, names=name)
         
         conv = batch_normalization(input_tensor=conv, is_trainable=batch_normalization)
         conv = dropout(input_tensor=conv, dropout_rates=dropout_rate)
         return conv
 
 
-    def stem_block(self, input_tensor, batch_normalization=True):
+    def stem_block(self, input_tensor, batch_normalization=True, scope=None, reuse=None):
         """[summary]
         
         Arguments:
@@ -61,33 +62,34 @@ class InceptionV4ResnetV2(object):
         Returns:
             [type] -- [description]
         """
-        conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), strides=(2, 2), batch_normalization=batch_normalization)        
-        conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
-        
-        conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
-        conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization)
-        
-        max_pool_1 = max_pool_2d(input_tensor=conv_3, pool_sizes=(3,3), stride_sizes=(2,2))
-        concat_1 = tf.concat([conv_4, max_pool_1], -1)
+        with tf.variable_scope(scope, 'StemBlock', [input_tensor], reuse=reuse):
+            conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), strides=(2, 2), batch_normalization=batch_normalization)        
+            conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
+            
+            conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
+            conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization)
+            
+            max_pool_1 = max_pool_2d(input_tensor=conv_3, pool_sizes=(3,3), stride_sizes=(2,2))
+            concat_1 = tf.concat([conv_4, max_pool_1], -1)
 
-        conv_5 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
-        conv_6 = self.conv_block(inputs=conv_5, filters=64, kernel_size=(7,1), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
-        
-        conv_7 = self.conv_block(inputs=conv_6, filters=64, kernel_size=(1,7), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
-        conv_8 = self.conv_block(inputs=conv_7, filters=96, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
-        
-        conv_9 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(1,1), strides=(1,1), batch_normalization=batch_normalization)
-        conv_10 = self.conv_block(inputs=conv_9, filters=96, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
-        
-        concat_2 = tf.concat([conv_8, conv_10], -1)
-        max_pool_2 = max_pool_2d(inputs=concat_2, pool_sizes=(3,3), stride_sizes=(2,2))
-        
-        conv_11 = self.conv_block(inputs=concat_2, filters=192, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization)
-        concat_3 = tf.concat([max_pool_2, conv_11], -1)
+            conv_5 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
+            conv_6 = self.conv_block(inputs=conv_5, filters=64, kernel_size=(7,1), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
+            
+            conv_7 = self.conv_block(inputs=conv_6, filters=64, kernel_size=(1,7), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
+            conv_8 = self.conv_block(inputs=conv_7, filters=96, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization)
+            
+            conv_9 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(1,1), strides=(1,1), batch_normalization=batch_normalization)
+            conv_10 = self.conv_block(inputs=conv_9, filters=96, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization)
+            
+            concat_2 = tf.concat([conv_8, conv_10], -1)
+            max_pool_2 = max_pool_2d(inputs=concat_2, pool_sizes=(3,3), stride_sizes=(2,2))
+            
+            conv_11 = self.conv_block(inputs=concat_2, filters=192, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization)
+            concat_3 = tf.concat([max_pool_2, conv_11], -1)
         return concat_3
     
 
-    def inception_resnet_a(self, input_tensor, drop_out=0.80, batch_normalization=True):
+    def inception_resnet_a(self, input_tensor, drop_out=0.80, batch_normalization=True, scope=None, reuse=None):
         """[summary]
         
         Arguments:
@@ -100,18 +102,19 @@ class InceptionV4ResnetV2(object):
             use_bias {bool} -- [description] (default: {True})
             use_batchnorm {bool} -- [description] (default: {True})
         """
-        
-        conv_1 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
-        conv_2 = self.conv_block(inputs=conv_1, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
-        conv_3 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
-    
-        conv_4 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
-        conv_5 = self.conv_block(inputs=conv_4, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+        with tf.variable_scope(scope, 'BlockInceptionA', [input_tensor], reuse=reuse):
+            with tf.variable_scope('Branch_0'):
+                conv_1 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_2 = self.conv_block(inputs=conv_1, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_3 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+            with tf.variable_scope('Branch_1'):
+                conv_4 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_5 = self.conv_block(inputs=conv_4, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
 
-        conv_6 = self.conv_block(inputs=input_tensor, filters=96, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
+            conv_6 = self.conv_block(inputs=input_tensor, filters=96, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
 
-        
-        conv_7 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+
+            conv_7 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
         input_depth = conv_right1.get_shape().as_list()[-1]
         conv_right2, _ = new_conv2d_layer(input=conv_right1, 
                                     filter_shape=[3, 3, input_depth, 48], 
