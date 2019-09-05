@@ -19,12 +19,11 @@ def add(input_tensor_1, input_tensor_2, names=None):
     add_tensor = tf.math.add(x=input_tensor_1,y=input_tensor_2,name=names)
     return add_tensor
 
-def concatenate(input_tensor_1, input_tensor_2, axis=-1, names=None):
+def concatenate(list_tensor, axis=-1, names=None):
     """[summary]
     
     Arguments:
-        input_tensor_1 {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer 1]
-        input_tensor_2 {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer 2]
+        list_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A list tensor representing prelayer 1]
     
     Keyword Arguments:
         axis {int} -- [Dimension tensor] (default: {-1})
@@ -35,7 +34,7 @@ def concatenate(input_tensor_1, input_tensor_2, axis=-1, names=None):
     else:
         names = ''
 
-    concat_tensor = tf.concat(values=[input_tensor_1,input_tensor_2],axis=axis,name=names)
+    concat_tensor = tf.concat(values=list_tensor,axis=axis,name=names)
     return concat_tensor
 
 def maximum(input_tensor_1, input_tensor_2, names=None):

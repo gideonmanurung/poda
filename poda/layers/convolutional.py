@@ -3,6 +3,96 @@ from poda.layers.activation import *
 from poda.layers.dense import *
 from poda.layers.regularizer import *
 
+def avarage_pool_1d(input_tensor, kernel_sizes=(3), stride_sizes=(1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
+    
+    Keyword Arguments:
+        kernel_sizes {tuple} -- [Size of kernel] (default: {(3,3)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[type]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [A layer with avarage pool 2D with dtype tf.float32]
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.avg_pool1d(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
+    return layer
+
+def avarage_pool_2d(input_tensor, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
+    
+    Keyword Arguments:
+        kernel_sizes {tuple} -- [Size of kernel] (default: {(3,3)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[type]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [A layer with avarage pool 2D with dtype tf.float32]
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.avg_pool(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
+    return layer
+
+def avarage_pool_3d(input_tensor, kernel_sizes=(3,3,3), stride_sizes=(1,1,1), paddings='same', names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
+    
+    Keyword Arguments:
+        kernel_sizes {tuple} -- [Size of kernel] (default: {(3,3)})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[type]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [A layer with avarage pool 2D with dtype tf.float32]
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    if paddings=='Valid' or paddings=='valid':
+        paddings = 'VALID'
+    elif paddings=='Same' or paddings=='same':
+        paddings = 'SAME'
+    else:
+        paddings = 'SAME'
+
+    layer = tf.nn.avg_pool3d(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
+    return layer
+
 def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon = 1e-3):
     """[summary]
     
