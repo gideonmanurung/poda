@@ -7,10 +7,13 @@ def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon 
     """[summary]
     
     Arguments:
-        input_tensor {[type]} -- [A Tensor representing prelayer]
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
     
     Keyword Arguments:
-        is_trainable {bool} -- [description] (default: {True})
+        is_trainable {bool} -- [State of trainable layer] (default: {True})
+    
+    Returns:
+        [Tensor] -- [A trainable tensor]
     """
     scale = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]))
     beta = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]))
@@ -35,12 +38,12 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
         number_filters {[int]} -- [the dimensionality of the output space (i.e. the number of filters in the convolution).]
     
     Keyword Arguments:
-        kernel_sizes {int} -- [description] (default: {3})
-        stride_sizes {tuple} -- [description] (default: {(1,1)})
-        paddings {str} -- [description] (default: {'same'})
-        activation {str} -- [description] (default: {'relu'})
-        dropout_layers {[type]} -- [description] (default: {None})
-        name {[str]} -- [Name of the layer] (default: {None})
+        kernel_sizes {int} -- [Size of kernel] (default: {3})
+        stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        activation {str} -- [Type of activation function in layer] (default: {'relu'})
+        dropout_layers {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
+        names {[str]} -- [Name of the layer] (default: {None})
     
     Returns:
         [Tensor] -- [Layer convolution 1D with dtype tf.float32]
@@ -82,10 +85,10 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     Keyword Arguments:
         kernel_sizes {int} -- [description] (default: {(3,3)})
         stride_sizes {tuple} -- [description] (default: {(1,1)})
-        paddings {str} -- [description] (default: {'same'})
-        activation {str} -- [description] (default: {'relu'})
-        dropout_layer {[float]} -- [description] (default: {None})
-        name {[str]} -- [Name of the layer] (default: {None})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        activation {str} -- [Type of activation function in layer] (default: {'relu'})
+        dropout_layer {[float]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
+        names {[str]} -- [Name of the layer] (default: {None})
     
     Returns:
         [Tensor] -- [Layer convolution 2D with dtype tf.float32]
@@ -128,10 +131,13 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     Keyword Arguments:
         kernel_sizes {tuple} -- [description] (default: {(3,3,3)})
         stride_sizes {tuple} -- [description] (default: {(1,1)})
-        paddings {str} -- [description] (default: {'same'})
-        activations {str} -- [description] (default: {'relu'})
-        dropout_layers {[type]} -- [description] (default: {None})
-        names {[type]} -- [description] (default: {None})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        activations {str} -- [Type of activation function in layer] (default: {'relu'})
+        dropout_layers {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
+        names {[type]} -- [Name of the layer] (default: {None})
+
+    Returns:
+        [Tensor] -- [Layer convolution 1D with dtype tf.float32]
     """    
     if names!=None:
         names = str(names)
@@ -171,10 +177,10 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
     Keyword Arguments:
         kernel_size {int , int} -- [Size of kernel] (default: {(3,3)})
         stride_size {int , int} -- [Size of striding of kernel] (default: {(1,1)})
-        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
-        activation_function {str} -- [Type of activation function in layer] (default: {'relu'})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        activations {str} -- [Type of activation function in layer] (default: {'relu'})
         dropout_layer {[float]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
-        name {[str]} -- [Name of the layer] (default: {None})
+        names {[str]} -- [Name of the layer] (default: {None})
     
     Returns:
         [Tensor] -- [Layer depthwise convolution 2D with dtype tf.float32]
@@ -215,8 +221,11 @@ def max_pool_1d(input_tensor, pool_sizes=(2), stride_sizes=(1), paddings='same',
     Keyword Arguments:
         pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
         stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
-        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
-        name {[str]} -- [Name of the layer] (default: {None})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[str]} -- [Name of the layer] (default: {None})
+
+    Returns:
+        [Tensor] -- [A layer with maxpool 1D with dtype tf.float32]
     """
     if names!=None:
         names = str(names)
@@ -242,8 +251,11 @@ def max_pool_2d(input_tensor, pool_sizes=(2,2), stride_sizes=(1,1), paddings='sa
     Keyword Arguments:
         pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
         stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
-        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
-        name {[str]} -- [Name of the layer] (default: {None})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[str]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [A layer with maxpool 2D with dtype tf.float32]
     """
     if names!=None:
         names = str(names)
@@ -269,8 +281,11 @@ def max_pool_3d(input_tensor, pool_sizes=(2,2,2), stride_sizes=(1,1,1), paddings
     Keyword Arguments:
         pool_size {tuple} -- [Size of kernel] (default: {(2,2)})
         stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
-        paddings {str} -- [Type of padding. Ex. same and valid] (default: {'same'})
-        name {[str]} -- [Name of the layer] (default: {None})
+        paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
+        names {[str]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [A layer with maxpool 3D with dtype tf.float32]
     """
     if names!=None:
         names = str(names)

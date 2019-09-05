@@ -1,330 +1,364 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Contains the definition of the Inception V4 architecture.
-As described in http://arxiv.org/abs/1602.07261.
-  Inception-v4, Inception-ResNet and the Impact of Residual Connections
-    on Learning
-  Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, Alex Alemi
-"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
+from poda.layers.convolutional import *
+from poda.layers.merge import *
 
-#import inception_utils
-
-slim = tf.contrib.slim
-from poda.layers.activation import *
-from poda.layers.dense import *
-from poda.layers.regularizer import *
-
-
-def block_inception_a(inputs, scope=None, reuse=None):
-  """Builds Inception-A block for Inception v4 network."""
-  # By default use stride=1 and SAME padding
-  with slim.arg_scope([slim.conv2d, slim.avg_pool2d, slim.max_pool2d],
-                      stride=1, padding='SAME'):
-    with tf.variable_scope(scope, 'BlockInceptionA', [inputs], reuse=reuse):
-      with tf.variable_scope('Branch_0'):
-        branch_0 = slim.conv2d(inputs, 96, [1, 1], scope='Conv2d_0a_1x1')
-      with tf.variable_scope('Branch_1'):
-        branch_1 = slim.conv2d(inputs, 64, [1, 1], scope='Conv2d_0a_1x1')
-        branch_1 = slim.conv2d(branch_1, 96, [3, 3], scope='Conv2d_0b_3x3')
-      with tf.variable_scope('Branch_2'):
-        branch_2 = slim.conv2d(inputs, 64, [1, 1], scope='Conv2d_0a_1x1')
-        branch_2 = slim.conv2d(branch_2, 96, [3, 3], scope='Conv2d_0b_3x3')
-        branch_2 = slim.conv2d(branch_2, 96, [3, 3], scope='Conv2d_0c_3x3')
-      with tf.variable_scope('Branch_3'):
-        branch_3 = slim.avg_pool2d(inputs, [3, 3], scope='AvgPool_0a_3x3')
-        branch_3 = slim.conv2d(branch_3, 96, [1, 1], scope='Conv2d_0b_1x1')
-      return tf.concat(axis=3, values=[branch_0, branch_1, branch_2, branch_3])
+class InceptionV4ResnetV2(object):
+    def __init__(self, is_training = True):
+        """[summary]
+        
+        Arguments:
+            num_classes {[type]} -- [description]
+        
+        Keyword Arguments:
+            input_tensor {[type]} -- [description] (default: {None})
+            input_shape {tuple} -- [description] (default: {(None, 300, 300, 3)})
+            learning_rate {float} -- [description] (default: {0.0001})
+            is_training {bool} -- [description] (default: {True})
+        """
+        self.is_training = is_training
 
 
-def block_reduction_a(inputs, scope=None, reuse=None):
-  """Builds Reduction-A block for Inception v4 network."""
-  # By default use stride=1 and SAME padding
-  with slim.arg_scope([slim.conv2d, slim.avg_pool2d, slim.max_pool2d],
-                      stride=1, padding='SAME'):
-    with tf.variable_scope(scope, 'BlockReductionA', [inputs], reuse=reuse):
-      with tf.variable_scope('Branch_0'):
-        branch_0 = slim.conv2d(inputs, 384, [3, 3], stride=2, padding='VALID',
-                               scope='Conv2d_1a_3x3')
-      with tf.variable_scope('Branch_1'):
-        branch_1 = slim.conv2d(inputs, 192, [1, 1], scope='Conv2d_0a_1x1')
-        branch_1 = slim.conv2d(branch_1, 224, [3, 3], scope='Conv2d_0b_3x3')
-        branch_1 = slim.conv2d(branch_1, 256, [3, 3], stride=2,
-                               padding='VALID', scope='Conv2d_1a_3x3')
-      with tf.variable_scope('Branch_2'):
-        branch_2 = slim.max_pool2d(inputs, [3, 3], stride=2, padding='VALID',
-                                   scope='MaxPool_1a_3x3')
-      return tf.concat(axis=3, values=[branch_0, branch_1, branch_2])
+    def conv_block(self, 
+                   inputs, 
+                   filters, 
+                   kernel_size, 
+                   strides=(2,2), 
+                   padding='VALID',  
+                   dropout_rate=0.2, 
+                   activation='relu',
+                   name=None,
+                   batch_normalization=True):
+        """[summary]
+        
+        Arguments:
+            inputs {[type]} -- [description]
+            filters {[type]} -- [description]
+            kernel_size {[type]} -- [description]
+        
+        Keyword Arguments:
+            strides {tuple} -- [description] (default: {(2,2)})
+            padding {str} -- [description] (default: {'valid'})
+            batch_normalization {bool} -- [description] (default: {True})
+            dropout_rate {float} -- [description] (default: {0.15})
+            activation {str} -- [description] (default: {'relu'})
+            is_training {bool} -- [description] (default: {True})
+        
+        Returns:
+            [type] -- [description]
+        """
+        conv = convolution_2d(input_tensor=inputs, number_filters=filters, kernel_sizes=kernel_size, 
+                              stride_sizes=strides, paddings=padding, activations=activation, names=name)
+        
+        conv = batch_normalization(input_tensor=conv, is_trainable=batch_normalization)
+        conv = dropout(input_tensor=conv, dropout_rates=dropout_rate)
+        return conv
 
 
-def block_inception_b(inputs, scope=None, reuse=None):
-  """Builds Inception-B block for Inception v4 network."""
-  # By default use stride=1 and SAME padding
-  with slim.arg_scope([slim.conv2d, slim.avg_pool2d, slim.max_pool2d],
-                      stride=1, padding='SAME'):
-    with tf.variable_scope(scope, 'BlockInceptionB', [inputs], reuse=reuse):
-      with tf.variable_scope('Branch_0'):
-        branch_0 = slim.conv2d(inputs, 384, [1, 1], scope='Conv2d_0a_1x1')
-      with tf.variable_scope('Branch_1'):
-        branch_1 = slim.conv2d(inputs, 192, [1, 1], scope='Conv2d_0a_1x1')
-        branch_1 = slim.conv2d(branch_1, 224, [1, 7], scope='Conv2d_0b_1x7')
-        branch_1 = slim.conv2d(branch_1, 256, [7, 1], scope='Conv2d_0c_7x1')
-      with tf.variable_scope('Branch_2'):
-        branch_2 = slim.conv2d(inputs, 192, [1, 1], scope='Conv2d_0a_1x1')
-        branch_2 = slim.conv2d(branch_2, 192, [7, 1], scope='Conv2d_0b_7x1')
-        branch_2 = slim.conv2d(branch_2, 224, [1, 7], scope='Conv2d_0c_1x7')
-        branch_2 = slim.conv2d(branch_2, 224, [7, 1], scope='Conv2d_0d_7x1')
-        branch_2 = slim.conv2d(branch_2, 256, [1, 7], scope='Conv2d_0e_1x7')
-      with tf.variable_scope('Branch_3'):
-        branch_3 = slim.avg_pool2d(inputs, [3, 3], scope='AvgPool_0a_3x3')
-        branch_3 = slim.conv2d(branch_3, 128, [1, 1], scope='Conv2d_0b_1x1')
-      return tf.concat(axis=3, values=[branch_0, branch_1, branch_2, branch_3])
+    def stem_block(self, input_tensor, batch_normalization=True, scope=None, reuse=None):
+        """[summary]
+        
+        Arguments:
+            input_tensor {[type]} -- [description]
+        
+        Returns:
+            [type] -- [description]
+        """
+        with tf.variable_scope(scope, 'StemBlock', [input_tensor], reuse=reuse):
+            conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), strides=(2, 2), batch_normalization=batch_normalization, name='0_3x3')
+
+            conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization, name='0_3x3')
+            
+            conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization, name='0_3x3')
+            
+            conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization, name='0b_3x3')
+            max_pool_1 = max_pool_2d(input_tensor=conv_3, pool_sizes=(3,3), stride_sizes=(2,2), names='0a_3x3')
+
+            concat_1 = concatenate(input_tensor_1=conv_4, input_tensor_2=max_pool_1, axis=-1, names='conv_3x3_maxpool_3x3')
+
+            conv_5 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(1,1), strides=(1,1), batch_normalization=batch_normalization, name='0a_1x1')
+            conv_6 = self.conv_block(inputs=conv_5, filters=96, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization, name='1a_3x3')
+
+            conv_7 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(3,3), strides=(1,1), batch_normalization=batch_normalization, name='0b_1x1')
+            conv_8 = self.conv_block(inputs=conv_7, filters=64, kernel_size=(7,1), padding='same', strides=(1, 1), batch_normalization=batch_normalization, name='1b_7x1')
+            conv_9 = self.conv_block(inputs=conv_8, filters=64, kernel_size=(1,7), padding='same', strides=(1, 1), batch_normalization=batch_normalization, name='2b_1x7')
+            conv_10 = self.conv_block(inputs=conv_9, filters=96, kernel_size=(3,3), padding='same', strides=(1, 1), batch_normalization=batch_normalization, name='3b_3x3')
+            
+            
+            concat_2 = concatenate(input_tensor_1=conv_6, input_tensor_2=conv_10, axis=-1, names='conv_3x3_conv_3x3')
+
+            max_pool_2 = max_pool_2d(inputs=concat_2, pool_sizes=(3,3), stride_sizes=(2,2), names='0b_3x3')
+            conv_11 = self.conv_block(inputs=concat_2, filters=192, kernel_size=(3,3), strides=(2,2), batch_normalization=batch_normalization, name='0a_3x3')
+            
+            concat_3 = concatenate(input_tensor_1=max_pool_2, input_tensor_2=conv_11, axis=-1, names='maxpool_3x3_conv_3x3')
+        return concat_3
+    
+
+    def inception_resnet_a(self, input_tensor, drop_out=0.80, batch_normalization=True, scope=None, reuse=None):
+        """[summary]
+        
+        Arguments:
+            inputs {[type]} -- [description]
+        
+        Keyword Arguments:
+            drop_out {float} -- [description] (default: {0.85})
+            activation {str} -- [description] (default: {'NONE'})
+            is_training {bool} -- [description] (default: {True})
+            use_bias {bool} -- [description] (default: {True})
+            use_batchnorm {bool} -- [description] (default: {True})
+        """
+        with tf.variable_scope(scope, 'BlockInceptionA', [input_tensor], reuse=reuse):
+            with tf.variable_scope('Branch_0'):
+                conv_1 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_2 = self.conv_block(inputs=conv_1, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_3 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+            with tf.variable_scope('Branch_1'):
+                conv_4 = self.conv_block(inputs=input_tensor, filters=64, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
+                conv_5 = self.conv_block(inputs=conv_4, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+
+            conv_6 = self.conv_block(inputs=input_tensor, filters=96, kernel_size=(1,1) , strides=(1,1), batch_normalization=batch_normalization)
 
 
-def block_reduction_b(inputs, scope=None, reuse=None):
-  """Builds Reduction-B block for Inception v4 network."""
-  # By default use stride=1 and SAME padding
-  with slim.arg_scope([slim.conv2d, slim.avg_pool2d, slim.max_pool2d],
-                      stride=1, padding='SAME'):
-    with tf.variable_scope(scope, 'BlockReductionB', [inputs], reuse=reuse):
-      with tf.variable_scope('Branch_0'):
-        branch_0 = slim.conv2d(inputs, 192, [1, 1], scope='Conv2d_0a_1x1')
-        branch_0 = slim.conv2d(branch_0, 192, [3, 3], stride=2,
-                               padding='VALID', scope='Conv2d_1a_3x3')
-      with tf.variable_scope('Branch_1'):
-        branch_1 = slim.conv2d(inputs, 256, [1, 1], scope='Conv2d_0a_1x1')
-        branch_1 = slim.conv2d(branch_1, 256, [1, 7], scope='Conv2d_0b_1x7')
-        branch_1 = slim.conv2d(branch_1, 320, [7, 1], scope='Conv2d_0c_7x1')
-        branch_1 = slim.conv2d(branch_1, 320, [3, 3], stride=2,
-                               padding='VALID', scope='Conv2d_1a_3x3')
-      with tf.variable_scope('Branch_2'):
-        branch_2 = slim.max_pool2d(inputs, [3, 3], stride=2, padding='VALID',
-                                   scope='MaxPool_1a_3x3')
-      return tf.concat(axis=3, values=[branch_0, branch_1, branch_2])
+            conv_7 = self.conv_block(inputs=conv_2, filters=96, kernel_size=(3,3) , strides=(1,1), batch_normalization=batch_normalization)
+        input_depth = conv_right1.get_shape().as_list()[-1]
+        conv_right2, _ = new_conv2d_layer(input=conv_right1, 
+                                    filter_shape=[3, 3, input_depth, 48], 
+                                    name='inres_a_conv_r2', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = conv_right2.get_shape().as_list()[-1]
+        conv_right3, _ = new_conv2d_layer(input=conv_right2, 
+                                    filter_shape=[3, 3, input_depth, 32], 
+                                    name='inres_a_conv_r3', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_mid1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[1, 1, input_depth, 32], 
+                                    name='inres_a_conv_m1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = conv_mid1.get_shape().as_list()[-1]
+        conv_mid2, _ = new_conv2d_layer(input=conv_mid1, 
+                                    filter_shape=[3, 3, input_depth, 32], 
+                                    name='inres_a_conv_m2', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_left1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[1, 1, input_depth, 32], 
+                                    name='inres_a_conv_l1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        concat_conv = tf.concat([conv_right3, conv_mid2, conv_left1], -1)
+    
+        input_depth = concat_conv.get_shape().as_list()[-1]
+        output_depth = inputs.get_shape().as_list()[-1]
+        conv_mixed, _ = new_conv2d_layer(input=concat_conv, 
+                                    filter_shape=[1, 1, input_depth, output_depth], 
+                                    name='inres_a_conv_concat', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        final_conv = inputs + conv_mixed
+        return final_conv
+        #return tf.nn.leaky_relu(final_conv)
+    
+    
+    # Reduction A
+    def reduction_a(self, inputs, 
+                    drop_out=0.80, 
+                    activation='NONE', 
+                    use_bias=True, 
+                    use_batchnorm=True):
+        """[summary]
+        
+        Arguments:
+            inputs {[type]} -- [description]
+        
+        Keyword Arguments:
+            drop_out {float} -- [description] (default: {0.85})
+            activation {str} -- [description] (default: {'NONE'})
+            is_training {bool} -- [description] (default: {True})
+            use_bias {bool} -- [description] (default: {True})
+            use_batchnorm {bool} -- [description] (default: {True})
+        """
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_right1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[1, 1, input_depth, 256], 
+                                    name='reduc_a_conv_r1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = conv_right1.get_shape().as_list()[-1]
+        conv_right2, _ = new_conv2d_layer(input=conv_right1, 
+                                    filter_shape=[3, 3, input_depth, 256], 
+                                    name='reduc_a_conv_r2', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+        
+        input_depth = conv_right2.get_shape().as_list()[-1]
+        conv_right3, _ = new_conv2d_layer(input=conv_right2, 
+                                    filter_shape=[3, 3, input_depth, 384], 
+                                    name='reduc_a_conv_r3', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,
+                                    strides=[1, 2, 2, 1],
+                                    padding='VALID',
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_mid1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[3, 3, input_depth, 384], 
+                                    name='reduc_a_conv_m1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,
+                                    strides=[1, 2, 2, 1],
+                                    padding='VALID',
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+        
+        """
+        max_pool = tf.nn.max_pool(value=inputs,
+                                ksize=[1, 3, 3, 1],
+                                strides=[1, 1, 1, 15],
+                                padding='VALID',
+                                name='reduc_a_conv_mp')
+        """
+        return tf.concat([conv_right3, conv_mid1], -1, name='hellloooooo')
+    
+    
+    # Inception ResNet B
+    def inception_resnet_b(self, inputs, 
+                            drop_out=0.80, 
+                            activation='NONE', 
+                            use_bias=True, 
+                            use_batchnorm=True):
+        """[summary]
+        
+        Arguments:
+            inputs {[type]} -- [description]
+        
+        Keyword Arguments:
+            drop_out {float} -- [description] (default: {0.85})
+            activation {str} -- [description] (default: {'NONE'})
+            is_training {bool} -- [description] (default: {True})
+            use_bias {bool} -- [description] (default: {True})
+            use_batchnorm {bool} -- [description] (default: {True})
+        """
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_right1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[1, 1, input_depth, 128], 
+                                    name='inres_a_conv_r1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,  
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = conv_right1.get_shape().as_list()[-1]
+        conv_right2, _ = new_conv2d_layer(input=conv_right1, 
+                                    filter_shape=[1, 7, input_depth, 160], 
+                                    name='inres_a_conv_r2', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = conv_right2.get_shape().as_list()[-1]
+        conv_right3, _ = new_conv2d_layer(input=conv_right2, 
+                                    filter_shape=[7, 1, input_depth, 192], 
+                                    name='inres_a_conv_r3', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        input_depth = inputs.get_shape().as_list()[-1]
+        conv_mid1, _ = new_conv2d_layer(input=inputs, 
+                                    filter_shape=[1, 1, input_depth, 192], 
+                                    name='inres_a_conv_m1', 
+                                    dropout_val=drop_out, 
+                                    activation=activation, 
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        concat_conv = tf.concat([conv_right3, conv_mid1], -1)
+        
+        input_depth = concat_conv.get_shape().as_list()[-1]
+        output_depth = inputs.get_shape().as_list()[-1]
+        conv_mixed, _ = new_conv2d_layer(input=concat_conv, 
+                                    filter_shape=[1, 1, input_depth, output_depth], 
+                                    name='inres_a_conv_mx', 
+                                    dropout_val=drop_out, 
+                                    activation=activation,   
+                                    is_training=self.is_training,
+                                    use_bias=use_bias,
+                                    use_batchnorm=use_batchnorm)
+    
+        final_conv = inputs + conv_mixed
+        return final_conv
+        #return tf.nn.leaky_relu(final_conv)
 
 
-def block_inception_c(inputs, scope=None, reuse=None):
-  """Builds Inception-C block for Inception v4 network."""
-  # By default use stride=1 and SAME padding
-  with slim.arg_scope([slim.conv2d, slim.avg_pool2d, slim.max_pool2d],
-                      stride=1, padding='SAME'):
-    with tf.variable_scope(scope, 'BlockInceptionC', [inputs], reuse=reuse):
-      with tf.variable_scope('Branch_0'):
-        branch_0 = slim.conv2d(inputs, 256, [1, 1], scope='Conv2d_0a_1x1')
-      with tf.variable_scope('Branch_1'):
-        branch_1 = slim.conv2d(inputs, 384, [1, 1], scope='Conv2d_0a_1x1')
-        branch_1 = tf.concat(axis=3, values=[
-            slim.conv2d(branch_1, 256, [1, 3], scope='Conv2d_0b_1x3'),
-            slim.conv2d(branch_1, 256, [3, 1], scope='Conv2d_0c_3x1')])
-      with tf.variable_scope('Branch_2'):
-        branch_2 = slim.conv2d(inputs, 384, [1, 1], scope='Conv2d_0a_1x1')
-        branch_2 = slim.conv2d(branch_2, 448, [3, 1], scope='Conv2d_0b_3x1')
-        branch_2 = slim.conv2d(branch_2, 512, [1, 3], scope='Conv2d_0c_1x3')
-        branch_2 = tf.concat(axis=3, values=[
-            slim.conv2d(branch_2, 256, [1, 3], scope='Conv2d_0d_1x3'),
-            slim.conv2d(branch_2, 256, [3, 1], scope='Conv2d_0e_3x1')])
-      with tf.variable_scope('Branch_3'):
-        branch_3 = slim.avg_pool2d(inputs, [3, 3], scope='AvgPool_0a_3x3')
-        branch_3 = slim.conv2d(branch_3, 256, [1, 1], scope='Conv2d_0b_1x1')
-      return tf.concat(axis=3, values=[branch_0, branch_1, branch_2, branch_3])
-
-
-def inception_v4_base(inputs, final_endpoint='Mixed_7d', scope=None):
-  """Creates the Inception V4 network up to the given final endpoint.
-  Args:
-    inputs: a 4-D tensor of size [batch_size, height, width, 3].
-    final_endpoint: specifies the endpoint to construct the network up to.
-      It can be one of [ 'Conv2d_1a_3x3', 'Conv2d_2a_3x3', 'Conv2d_2b_3x3',
-      'Mixed_3a', 'Mixed_4a', 'Mixed_5a', 'Mixed_5b', 'Mixed_5c', 'Mixed_5d',
-      'Mixed_5e', 'Mixed_6a', 'Mixed_6b', 'Mixed_6c', 'Mixed_6d', 'Mixed_6e',
-      'Mixed_6f', 'Mixed_6g', 'Mixed_6h', 'Mixed_7a', 'Mixed_7b', 'Mixed_7c',
-      'Mixed_7d']
-    scope: Optional variable_scope.
-  Returns:
-    logits: the logits outputs of the model.
-    end_points: the set of end_points from the inception model.
-  Raises:
-    ValueError: if final_endpoint is not set to one of the predefined values,
-  """
-  end_points = {}
-
-  def add_and_check_final(name, net):
-    end_points[name] = net
-    return name == final_endpoint
-
-  with tf.variable_scope(scope, 'InceptionV4', [inputs]):
-    with slim.arg_scope([slim.conv2d, slim.max_pool2d, slim.avg_pool2d],
-                        stride=1, padding='SAME'):
-      # 299 x 299 x 3
-      net = slim.conv2d(inputs, 32, [3, 3], stride=2,
-                        padding='VALID', scope='Conv2d_1a_3x3')
-      if add_and_check_final('Conv2d_1a_3x3', net): return net, end_points
-      # 149 x 149 x 32
-      net = slim.conv2d(net, 32, [3, 3], padding='VALID',
-                        scope='Conv2d_2a_3x3')
-      if add_and_check_final('Conv2d_2a_3x3', net): return net, end_points
-      # 147 x 147 x 32
-      net = slim.conv2d(net, 64, [3, 3], scope='Conv2d_2b_3x3')
-      if add_and_check_final('Conv2d_2b_3x3', net): return net, end_points
-      # 147 x 147 x 64
-      with tf.variable_scope('Mixed_3a'):
-        with tf.variable_scope('Branch_0'):
-          branch_0 = slim.max_pool2d(net, [3, 3], stride=2, padding='VALID',
-                                     scope='MaxPool_0a_3x3')
-        with tf.variable_scope('Branch_1'):
-          branch_1 = slim.conv2d(net, 96, [3, 3], stride=2, padding='VALID',
-                                 scope='Conv2d_0a_3x3')
-        net = tf.concat(axis=3, values=[branch_0, branch_1])
-        if add_and_check_final('Mixed_3a', net): return net, end_points
-
-      # 73 x 73 x 160
-      with tf.variable_scope('Mixed_4a'):
-        with tf.variable_scope('Branch_0'):
-          branch_0 = slim.conv2d(net, 64, [1, 1], scope='Conv2d_0a_1x1')
-          branch_0 = slim.conv2d(branch_0, 96, [3, 3], padding='VALID',
-                                 scope='Conv2d_1a_3x3')
-        with tf.variable_scope('Branch_1'):
-          branch_1 = slim.conv2d(net, 64, [1, 1], scope='Conv2d_0a_1x1')
-          branch_1 = slim.conv2d(branch_1, 64, [1, 7], scope='Conv2d_0b_1x7')
-          branch_1 = slim.conv2d(branch_1, 64, [7, 1], scope='Conv2d_0c_7x1')
-          branch_1 = slim.conv2d(branch_1, 96, [3, 3], padding='VALID',
-                                 scope='Conv2d_1a_3x3')
-        net = tf.concat(axis=3, values=[branch_0, branch_1])
-        if add_and_check_final('Mixed_4a', net): return net, end_points
-
-      # 71 x 71 x 192
-      with tf.variable_scope('Mixed_5a'):
-        with tf.variable_scope('Branch_0'):
-          branch_0 = slim.conv2d(net, 192, [3, 3], stride=2, padding='VALID',
-                                 scope='Conv2d_1a_3x3')
-        with tf.variable_scope('Branch_1'):
-          branch_1 = slim.max_pool2d(net, [3, 3], stride=2, padding='VALID',
-                                     scope='MaxPool_1a_3x3')
-        net = tf.concat(axis=3, values=[branch_0, branch_1])
-        if add_and_check_final('Mixed_5a', net): return net, end_points
-
-      # 35 x 35 x 384
-      # 4 x Inception-A blocks
-      for idx in range(4):
-        block_scope = 'Mixed_5' + chr(ord('b') + idx)
-        net = block_inception_a(net, block_scope)
-        if add_and_check_final(block_scope, net): return net, end_points
-
-      # 35 x 35 x 384
-      # Reduction-A block
-      net = block_reduction_a(net, 'Mixed_6a')
-      if add_and_check_final('Mixed_6a', net): return net, end_points
-
-      # 17 x 17 x 1024
-      # 7 x Inception-B blocks
-      for idx in range(7):
-        block_scope = 'Mixed_6' + chr(ord('b') + idx)
-        net = block_inception_b(net, block_scope)
-        if add_and_check_final(block_scope, net): return net, end_points
-
-      # 17 x 17 x 1024
-      # Reduction-B block
-      net = block_reduction_b(net, 'Mixed_7a')
-      if add_and_check_final('Mixed_7a', net): return net, end_points
-
-      # 8 x 8 x 1536
-      # 3 x Inception-C blocks
-      for idx in range(3):
-        block_scope = 'Mixed_7' + chr(ord('b') + idx)
-        net = block_inception_c(net, block_scope)
-        if add_and_check_final(block_scope, net): return net, end_points
-  raise ValueError('Unknown final endpoint %s' % final_endpoint)
-
-
-def build_top_layer_model(base_layer,num_depthwise_layer=None,
-                          num_fully_connected_layer=1,num_hidden_unit=512,
-                          activation_fully_connected='relu',dropout_keep_prob=None,regularizers=None,num_classes=1000):
-    previous_layer = base_layer
-    if num_depthwise_layer!=None:
-        num_depthwise_layer = num_depthwise_layer * 3
-        for i in range(num_depthwise_layer):
-            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
-                                                      kernel_size=(3,3), stride_size=(2,2), padding='same',
-                                                      activation_function='relu',name='depthwise_conv2d_'+str(i))
-            previous_layer = depth_wise_net
-    else:
-        depth_wise_net = previous_layer
-
-    flatten_layer = flatten(input_tensor=depth_wise_net)
-
-    if num_fully_connected_layer !=None:
-        for j in range(num_fully_connected_layer):
-            fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
-                                                  activation_function=activation_fully_connected,
-                                                  dropout_layer=dropout_keep_prob,regularizers=regularizers,
-                                                  scale=dropout_keep_prob,name='fully_connected_'+str(j))
-            flatten_layer = fully_connected_net
-    else:
-        flatten_layer = flatten_layer
-
-    flatten_layer = dropout(input_tensor=flatten_layer,dropout_rates=0.6)
-
-    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
-    if num_classes > 2:
-        output = softmax(input_tensor=non_logit)
-    else:
-        output = sigmoid(input_tensor=non_logit)
-    return non_logit, output
-
-
-def inception_v4(inputs,  num_classes=1000, 
-                 final_endpoint='Mixed_7d',
-                 is_training=True,
-                 dropout_keep_prob=0.8,
-                 reuse=None,
-                 scope='InceptionV4',
-                 create_aux_logits=True,
-                 num_depthwise_layer=None,num_fully_connected_layer=None,
-                 num_hidden_unit=None,activation_fully_connected=None,
-                 regularizers=None):
-  """Creates the Inception V4 model.
-  Args:
-    inputs: a 4-D tensor of size [batch_size, height, width, 3].
-    num_classes: number of predicted classes. If 0 or None, the logits layer
-      is omitted and the input features to the logits layer (before dropout)
-      are returned instead.
-    is_training: whether is training or not.
-    dropout_keep_prob: float, the fraction to keep before final layer.
-    reuse: whether or not the network and its variables should be reused. To be
-      able to reuse 'scope' must be given.
-    scope: Optional variable_scope.
-    create_aux_logits: Whether to include the auxiliary logits.
-  Returns:
-    net: a Tensor with the logits (pre-softmax activations) if num_classes
-      is a non-zero integer, or the non-dropped input to the logits layer
-      if num_classes is 0 or None.
-    end_points: the set of end_points from the inception model.
-  """
-  end_points = {}
-  with tf.variable_scope(scope, 'InceptionV4', [inputs], reuse=reuse) as scope:
-    with slim.arg_scope([slim.batch_norm, slim.dropout],
-                        is_training=is_training):
-      net, end_points = inception_v4_base(inputs, final_endpoint=final_endpoint, scope=scope)
-  
-  var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-  non_logit , top_layer = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,
-                                                    num_fully_connected_layer=num_fully_connected_layer,
-                                                    num_hidden_unit=num_hidden_unit,
-                                                    activation_fully_connected=activation_fully_connected,regularizers=regularizers)
-  return var_list , non_logit , top_layer
+    def create_base_model(self, input=None):
+        """[summary]
+        
+        Arguments:
+            classes {[type]} -- [description]
+        
+        Returns:
+            [type] -- [description]
+        """
+        with tf.variable_scope("stem"):
+            net = self.stem_block(input)
+        print (net, "===================>>>")
+        
+        with tf.variable_scope("inception_resnet_a"):
+            for i in range(5):
+                net = self.inception_resnet_a(inputs=net)
+        print (net, "===================>>>")
+        with tf.variable_scope("reduction_a"):
+            net = self.reduction_a(inputs=net)
+        print(net, "===================>>>")
+        with tf.variable_scope("inception_resnet_b"):
+            for i in range(10):
+                 net = self.inception_resnet_b(inputs=net)
+        print (net, "===================>>>")
+        return net

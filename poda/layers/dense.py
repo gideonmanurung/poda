@@ -2,6 +2,53 @@ import tensorflow as tf
 from poda.layers.activation import *
 from poda.layers.regularizer import *
 
+def fully_connected(input_tensor, hidden_units, names=None, activations=None, regularizers=None, scale=0.2, bias_initializers='ZERO'):
+    """[Create a new trainable Fully Connected layer]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
+        hidden_units {[int]} -- [description]
+        names {[str]} -- [Name of the layer] (default: {None})
+    
+    Keyword Arguments:
+        activation {str} -- [description] (default: {'relu'})
+        regularizers {[type]} -- [description] (default: {None})
+        scale {float} -- [description] (default: {0.2})
+    
+    Returns:
+        [Tensor] -- [A trainable tensor]
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+
+    weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
+
+    bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=names, bias_initializers=bias_initializers)
+
+    layer = tf.matmul(input_tensor, weight)
+    layer += bias
+
+    if activations!=None:
+        layer = define_activation_function(input_tensor=layer, activation_name=activation, names=names)
+    else:
+        layer = layer
+
+    if regularizers=='both':
+        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
+        layer = l2_regularization(input_tensor=layer, names=names)
+    elif regularizers=='l1':
+        layer = l1_regularization(input_tensor=layer)
+    elif regularizers=='l2':
+        layer = l2_regularization(input_tensor=layer)
+    elif regularizers=='dropout':
+        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
+    else:
+        layer = layer
+
+    return layer
+
 def new_weights(shapes, names, random_types='truncated_normal', dtypes=tf.float32):
     """[Create a new trainable tensor as weight]
     
@@ -44,51 +91,3 @@ def new_biases(shapes, names, bias_initializers='NOTZERO', dtypes=tf.float32):
         initial_bias = tf.constant(0.05, shape=shapes, dtype=dtypes)
 
     return tf.Variable(initial_bias, dtype=dtypes, name='bias_'+names)
-
-def fully_connected(input_tensor, hidden_units, names, activations=None, regularizers=None, scale=0.2, bias_initializers='ZERO'):
-    """[Create a new trainable Fully Connected layer]
-    
-    Arguments:
-        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [description]
-        hidden_units {[int]} -- [description]
-        names {[type]} -- [description]
-    
-    Keyword Arguments:
-        activation {str} -- [description] (default: {'relu'})
-        regularizers {[type]} -- [description] (default: {None})
-        scale {float} -- [description] (default: {0.2})
-    
-    Returns:
-        [Tensor] -- [A trainable tensor]
-    """
-    if names!=None:
-        names = str(names)
-    else:
-        names = ''
-
-    weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
-
-    bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=names, bias_initializers=bias_initializers)
-
-    layer = tf.matmul(input_tensor, weight)
-    layer += bias
-
-    if activations!=None:
-        layer = define_activation_function(input_tensor=layer, activation_name=activation, names=names)
-    else:
-        layer = layer
-
-    if regularizers=='both':
-        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
-        layer = l2_regularization(input_tensor=layer, names=names)
-    elif regularizers=='l1':
-        layer = l1_regularization(input_tensor=layer)
-    elif regularizers=='l2':
-        layer = l2_regularization(input_tensor=layer)
-    elif regularizers=='dropout':
-        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
-    else:
-        layer = layer
-
-    return layer
-    
