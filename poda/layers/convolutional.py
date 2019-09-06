@@ -21,7 +21,7 @@ def avarage_pool_1d(input_tensor, kernel_sizes=(3), stride_sizes=(1), paddings='
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'avg_pool_1d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -51,7 +51,7 @@ def avarage_pool_2d(input_tensor, kernel_sizes=(3,3), stride_sizes=(1,1), paddin
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'avg_pool_2d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -81,7 +81,7 @@ def avarage_pool_3d(input_tensor, kernel_sizes=(3,3,3), stride_sizes=(1,1,1), pa
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'avg_pool_3d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -141,7 +141,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'conv_1d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -150,7 +150,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes, input_tensor.get_shape().as_list()[2], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes, input_tensor.get_shape().as_list()[-1], number_filters], names=names)
 
     layer = tf.nn.conv1d(value=input_tensor, filters=weight, stride=stride_sizes[0], padding=paddings, use_cudnn_on_gpu=True, data_format=None, name='conv_1d_'+names)
 
@@ -186,7 +186,7 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'conv_2d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -195,7 +195,7 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
 
     layer = tf.nn.conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, use_cudnn_on_gpu=True,
                          data_format='NHWC', dilations=[1, 1, 1, 1], name='conv_2d_'+names)
@@ -232,7 +232,7 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'conv_3d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -241,7 +241,7 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
 
     layer = tf.nn.conv3d(input,filter,strides=[stride_sizes[0],stride_sizes[1],stride_sizes],padding=paddings,data_format='NDHWC',dilations=[1, 1, 1, 1, 1],name='conv_3d_'+names)
     
@@ -278,7 +278,7 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'deptwise_conv_2d'
     
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -287,7 +287,7 @@ def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), s
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[3], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
 
     layer = tf.nn.depthwise_conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, rate=None, name='deptwise_conv_2d_'+names, data_format=None )
 
@@ -320,7 +320,7 @@ def max_pool_1d(input_tensor, pool_sizes=(2), stride_sizes=(1), paddings='same',
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'max_pool_1d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -350,7 +350,7 @@ def max_pool_2d(input_tensor, pool_sizes=(2,2), stride_sizes=(1,1), paddings='sa
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'max_pool_2d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'
@@ -380,7 +380,7 @@ def max_pool_3d(input_tensor, pool_sizes=(2,2,2), stride_sizes=(1,1,1), paddings
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'max_pool_3d'
 
     if paddings=='Valid' or paddings=='valid':
         paddings = 'VALID'

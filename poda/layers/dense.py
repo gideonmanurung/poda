@@ -2,7 +2,7 @@ import tensorflow as tf
 from poda.layers.activation import *
 from poda.layers.regularizer import *
 
-def fully_connected(input_tensor, hidden_units, names=None, activations=None, regularizers=None, scale=0.2, bias_initializers='ZERO'):
+def dense(input_tensor, hidden_units, names=None, activations=None, regularizers=None, scale=0.2, bias_initializers='ZERO'):
     """[Create a new trainable Fully Connected layer]
     
     Arguments:
@@ -21,7 +21,7 @@ def fully_connected(input_tensor, hidden_units, names=None, activations=None, re
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'dense'
 
     weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
 
@@ -65,11 +65,11 @@ def new_weights(shapes, names, random_types='truncated_normal', dtypes=tf.float3
         [float32] -- [A trainable tensor]
     """
     if random_types=='random_normal':
-        initial_weight = tf.random_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
+        initial_weight = tf.random.normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
     elif random_types=='random_uniform':
-        initial_weight = tf.random_uniform(shape=shapes,minval=0,maxval=None,dtype=dtypes,seed=None)
+        initial_weight = tf.random.uniform(shape=shapes,minval=0,maxval=None,dtype=dtypes,seed=None)
     else:
-        initial_weight = tf.truncated_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
+        initial_weight = tf.random.truncated_normal(shape=shapes,mean=0.0,stddev=1.0,dtype=dtypes,seed=None)
     return tf.Variable(initial_weight, dtype=dtypes, name='weight_'+names)
 
 def new_biases(shapes, names, bias_initializers='NOTZERO', dtypes=tf.float32):
@@ -86,7 +86,7 @@ def new_biases(shapes, names, bias_initializers='NOTZERO', dtypes=tf.float32):
         [float32] -- [A trainable tensor]
     """
     if bias_initializers=='ZERO':
-        initial_bias = tf.zeros(shape=shapes, dtype=dtypes, name=name)
+        initial_bias = tf.zeros(shape=shapes, dtype=dtypes, name=names)
     else:
         initial_bias = tf.constant(0.05, shape=shapes, dtype=dtypes)
 

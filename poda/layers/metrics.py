@@ -1,7 +1,6 @@
 import tensorflow as tf 
 import numpy as np
 
-
 def calculate_accuracy(input_tensor, label, threshold=0.5):
     """[summary]
     

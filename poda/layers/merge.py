@@ -28,6 +28,9 @@ def concatenate(list_tensor, axis=-1, names=None):
     Keyword Arguments:
         axis {int} -- [Dimension tensor] (default: {-1})
         names {[str]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [Concatenate tensor]
     """
     if names!=None:
         names = str(names)
@@ -36,6 +39,28 @@ def concatenate(list_tensor, axis=-1, names=None):
 
     concat_tensor = tf.concat(values=list_tensor,axis=axis,name=names)
     return concat_tensor
+
+def flatten(input_tensor, names=None):
+    """[summary]
+    
+    Arguments:
+        input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer]
+    
+    Keyword Arguments:
+        names {[type]} -- [Name of the layer] (default: {None})
+    
+    Returns:
+        [Tensor] -- [Flatten tensor]
+    """
+    if names!=None:
+        names = str(names)
+    else:
+        names = ''
+        
+    tensor_shape = input_tensor.get_shape().as_list()
+    output_shape = [tensor_shape[0], tensor_shape[1]*tensor_shape[2]*tensor_shape[3]]
+    flatten_tensor = tf.reshape(tensor=input_tensor,shape=output_shape,name=names)
+    return flatten_tensor
 
 def maximum(input_tensor_1, input_tensor_2, names=None):
     """[summary]
@@ -46,7 +71,7 @@ def maximum(input_tensor_1, input_tensor_2, names=None):
         names {[str]} -- [Name of the layer] (default: {None})
 
     Returns:
-        [Tensor] -- [maximum tensor]
+        [Tensor] -- [Maximum tensor]
     """
     if names!=None:
         names = str(names)
@@ -65,7 +90,7 @@ def minimum(input_tensor_1, input_tensor_2, names=None):
         names {[str]} -- [Name of the layer] (default: {None})
 
     Returns:
-        [Tensor] -- [minimum tensor]
+        [Tensor] -- [Minimum tensor]
     """
     if names!=None:
         names = str(names)

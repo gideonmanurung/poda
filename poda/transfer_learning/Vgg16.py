@@ -1,122 +1,86 @@
-# Copyright 2016 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-"""Contains model definitions for versions of the Oxford VGG network.
-These model definitions were introduced in the following technical report:
-  Very Deep Convolutional Networks For Large-Scale Image Recognition
-  Karen Simonyan and Andrew Zisserman
-  arXiv technical report, 2015
-  PDF: http://arxiv.org/pdf/1409.1556.pdf
-  ILSVRC 2014 Slides: http://www.robots.ox.ac.uk/~karen/pdf/ILSVRC_2014.pdf
-  CC-BY-4.0
-More information can be obtained from the VGG website:
-www.robots.ox.ac.uk/~vgg/research/very_deep/
-Usage:
-  with slim.arg_scope(vgg.vgg_arg_scope()):
-    outputs, end_points = vgg.vgg_a(inputs)
-  with slim.arg_scope(vgg.vgg_arg_scope()):
-    outputs, end_points = vgg.vgg_16(inputs)
-"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
-from poda.layers.convolutional import *
+from poda.layers.merge import *
 from poda.layers.dense import *
 from poda.layers.activation import *
-from poda.utils import *
-slim = tf.contrib.slim
+from poda.layers.regularizer import *
+from poda.layers.convolutional import *
 
-def build_base_layer_model(input_tensor,num_blocks=5,scope='vgg_16'):
-    with tf.variable_scope(scope, 'vgg_16', [input_tensor]) as sc:
-        end_points_collection = sc.original_name_scope + '_end_points'
-        # Collect outputs for conv2d, fully_connected and max_pool2d.
-        with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d],outputs_collections=end_points_collection):
-            net = slim.repeat(input_tensor, 2, slim.conv2d, 64, [3, 3], scope='conv1')
-            block_1 = slim.max_pool2d(net, [2, 2], scope='pool1')
-            net = slim.repeat(block_1, 2, slim.conv2d, 128, [3, 3], scope='conv2')
-            block_2 = slim.max_pool2d(net, [2, 2], scope='pool2')
-            net = slim.repeat(block_2, 3, slim.conv2d, 256, [3, 3], scope='conv3')
-            block_3 = slim.max_pool2d(net, [2, 2], scope='pool3')
-            net = slim.repeat(block_3, 3, slim.conv2d, 512, [3, 3], scope='conv4')
-            block_4 = slim.max_pool2d(net, [2, 2], scope='pool4')
-            net = slim.repeat(block_4, 3, slim.conv2d, 512, [3, 3], scope='conv5')
-            block_5 = slim.max_pool2d(net, [2, 2], scope='pool5')
+class VGG16(object):
+    def __init__(self, input_tensor, num_blocks=5, classes=1000, batch_normalizations = True):
+        """[summary]
+        
+        Arguments:
+            object {[type]} -- [description]
+            input_tensor {[type]} -- [description]
+        
+        Keyword Arguments:
+            classes {int} -- [description] (default: {1000})
+            batch_normalization {bool} -- [description] (default: {True})
+        """
+        self.input_tensor = input_tensor
+        self.classes = classes
+        self.batch_normalization = batch_normalizations
+        self.num_block = num_blocks
 
-            if num_blocks==1:
-                net = block_1
-            elif num_blocks==2:
-                net = block_2
-            elif num_blocks==3:
-                net = block_3
-            elif num_blocks==4:
-                net = block_4
-            elif num_blocks==5:
-                net = block_5
-            return net
-            
-def build_top_layer_model(base_layer,num_depthwise_layer=None,
-                          num_fully_connected_layer=1,num_hidden_unit=512,
-                          activation_fully_connected='relu',dropout_keep_prob=None,regularizers=None,num_classes=1000):
-    previous_layer = base_layer
-    if num_depthwise_layer!=None:
-        num_depthwise_layer = num_depthwise_layer * 3
-        for i in range(num_depthwise_layer):
-            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
-                                                      kernel_sizes=(3,3), stride_sizes=(2,2), padding='same',
-                                                      activation='relu',names='depthwise_conv2d_'+str(i))
-            previous_layer = depth_wise_net
-    else:
-        depth_wise_net = previous_layer
+    def vgg_block(self, input_tensor, num_block, batch_normalization=True, scope=None, reuse=None):
+        with tf.variable_scope(scope, 'vgg_16', [input_tensor]):
+            with tf.variable_scope('Block_1'):
+                conv_1 = convolution_2d(input_tensor=input_tensor, number_filters=64, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_2 = convolution_2d(input_tensor=conv_1, number_filters=64, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_3 = max_pool_2d(input_tensor=conv_2, pool_sizes=(2,2), stride_sizes=(2,2), paddings='valid', names=None)
+            with tf.variable_scope('Block_2'):
+                conv_4 = convolution_2d(input_tensor=conv_3, number_filters=128, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_5 = convolution_2d(input_tensor=conv_4, number_filters=128, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_6 = max_pool_2d(input_tensor=conv_5, pool_sizes=(2,2), stride_sizes=(2,2), paddings='valid', names=None)
+            with tf.variable_scope('Block_3'):
+                conv_7 = convolution_2d(input_tensor=conv_6, number_filters=256, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_8 = convolution_2d(input_tensor=conv_7, number_filters=256, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_9 = convolution_2d(input_tensor=conv_8, number_filters=256, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_10 = max_pool_2d(input_tensor=conv_9, pool_sizes=(2,2), stride_sizes=(2,2), paddings='valid', names=None)
+            with tf.variable_scope('Block_4'):
+                conv_11 = convolution_2d(input_tensor=conv_10, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_12 = convolution_2d(input_tensor=conv_11, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_13 = convolution_2d(input_tensor=conv_12, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_14 = max_pool_2d(input_tensor=conv_13, pool_sizes=(2,2), stride_sizes=(2,2), paddings='valid', names=None)
+            with tf.variable_scope('Block_5'):
+                conv_15 = convolution_2d(input_tensor=conv_14, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_16 = convolution_2d(input_tensor=conv_15, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_17 = convolution_2d(input_tensor=conv_16, number_filters=512, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                conv_18 = max_pool_2d(input_tensor=conv_17, pool_sizes=(2,2), stride_sizes=(2,2), paddings='valid', names=None)
 
-    flatten_layer = flatten(input_tensor=depth_wise_net)
+        if num_block==1:
+            vgg_16 = conv_3
+        elif num_block==2:
+            vgg_16 = conv_6
+        elif num_block==3:
+            vgg_16 = conv_10
+        elif num_block==4:
+            vgg_16 = conv_14
+        elif num_block==5:
+            vgg_16 = conv_18
+        else:
+            vgg_16 = conv_18
 
-    if num_fully_connected_layer !=None:
-        for j in range(num_fully_connected_layer):
-            fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
-                                                  activation_function=activation_fully_connected,
-                                                  dropout_layer=dropout_keep_prob,regularizers=regularizers,
-                                                  scale=dropout_keep_prob,name='fully_connected_'+str(j))
-            flatten_layer = fully_connected_net
-    else:
-        flatten_layer = flatten_layer
+        return vgg_16
 
-    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
-    if num_classes > 2:
-        output = softmax(input_tensor=non_logit)
-    else:
-        output = sigmoid(input_tensor=non_logit)
-    return non_logit, output
-    
-def vgg16(input_tensor,num_classes=1000,
-        num_blocks=5,is_training=False,num_depthwise_layer=None,
-        num_fully_connected_layer=1,num_hidden_unit=512,
-        activation_fully_connected=None,regularizers=None):
-    net = build_base_layer_model(input_tensor=input_tensor,num_blocks=num_blocks)
-    var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    non_logit , top_layer_vgg = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,
-                                                    num_fully_connected_layer=num_fully_connected_layer,
-                                                    num_hidden_unit=num_hidden_unit,
-                                                    activation_fully_connected=activation_fully_connected,regularizers=regularizers)
+    def create_model(self, input_tensor, num_depthwise_layer=None, num_dense_layer=1, num_hidden_unit=512, activation_dense='relu', dropout_rate=None, regularizer=None, classes=1000, scope=None):
+        number_filter = input_tensor.get_shape().as_list()[-1]
 
-    return var_list , non_logit , top_layer_vgg
+        with tf.variable_scope(scope, 'vgg_16', [input_tensor]):
+            base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
-def vgg_arg_scope(self,weight_decay=0.0005):
-    with slim.arg_scope([slim.conv2d, slim.fully_connected],
-                            activation_fn=tf.nn.relu,
-                            weights_regularizer=slim.l2_regularizer(weight_decay),
-                            biases_initializer=tf.zeros_initializer()):
-        with slim.arg_scope([slim.conv2d], padding='SAME') as arg_sc:
-            return arg_sc
+            if num_depthwise_layer==None or num_depthwise_layer<0:
+                vgg_16 = dense(input_tensor=input_tensor, hidden_units=num_hidden_unit, names=None, activations=activation_dense, regularizers=regularizer)
+            else:
+                for i in range(0,num_depthwise_layer):
+                    vgg_16 = depthwise_convolution_2d(input_tensor=input_tensor, number_filters=number_filter, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+
+            non_logit = dense(input_tensor=vgg_16, hidden_units=classes, names='output')
+
+            if classes > 2:
+                output = softmax(input_tensor=non_logit)
+            else:
+                output = sigmoid(input_tensor=non_logit)
+
+            full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+        return non_logit, output, base_var_list, full_var_list
