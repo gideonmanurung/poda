@@ -86,7 +86,7 @@ def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy
     """
     return loss
 
-def mse_loss_mean(input_tensor, label, names=None):
+def mse_mean(input_tensor, label, names=None):
     """[summary]
     
     Arguments:
@@ -102,14 +102,14 @@ def mse_loss_mean(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'mse_mean_loss'
 
     loss = tf.compat.v1.losses.mean_squared_error(labels=label, predictions=input_tensor)
     loss = tf.reduce_mean(loss)
     return loss
 
 
-def mse_loss_sum(input_tensor, label, names=None):
+def mse_sum(input_tensor, label, names=None):
     """[summary]
     
     Arguments:
@@ -125,7 +125,7 @@ def mse_loss_sum(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'mse_sum_loss'
 
     loss = tf.compat.v1.losses.mean_squared_error(labels=label, predictions=input_tensor)
     loss = tf.reduce_sum(loss)
@@ -148,7 +148,7 @@ def softmax_crosentropy_mean(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'softmax_crossentropy_mean_loss'
 
     loss = tf.compat.v2.nn.softmax_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
     loss = tf.reduce_mean(loss)
@@ -171,7 +171,7 @@ def softmax_crosentropy_sum(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'softmax_crossentropy_sum_loss'
 
     loss = tf.compat.v2.nn.softmax_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
     loss = tf.reduce_sum(loss)
@@ -194,7 +194,7 @@ def sigmoid_crossentropy_mean(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'sigmoid_crossentropy_mean_loss'
 
     loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
     loss = tf.reduce_mean(loss)
@@ -217,7 +217,7 @@ def sigmoid_crossentropy_sum(input_tensor, label, names=None):
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'sigmoid_crossentropy_sum_loss'
 
     loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
     loss = tf.reduce_sum(loss)

@@ -74,15 +74,15 @@ def optimizers(optimizers_names='adam', learning_rates=0.0001):
         [Optimizer] -- [Optimizer for training graph]
     """
     optimizers_function = None
-    if activation_names=='adam':
+    if optimizers_names=='adam':
         optimizers_function = tf.train.AdamOptimizer(learning_rate=learning_rates,beta1=0.9,beta2=0.999,epsilon=1e-08,use_locking=False,name='Adam')
-    elif activation_names=='adadelta':
+    elif optimizers_names=='adadelta':
         optimizers_function = tf.train.AdadeltaOptimizer(learning_rate=learning_rates,rho=0.95,epsilon=1e-08,use_locking=False,name='Adadelta')
-    elif activation_names=='adagrad':
+    elif optimizers_names=='adagrad':
         optimizers_function = tf.train.AdagradOptimizer(learning_rate=learning_rates,initial_accumulator_value=0.1,use_locking=False,name='Adagrad')
-    elif activation_names=='sgd':
+    elif optimizers_names=='sgd':
         optimizers_function = tf.train.GradientDescentOptimizer(learning_rate=learning_rates,use_locking=False,name='GradientDescent')
-    elif activation_names=='rmsprop':
+    elif optimizers_names=='rmsprop':
         optimizers_function = tf.train.RMSPropOptimizer(learning_rate=learning_rates,decay=0.9,momentum=0.0,epsilon=1e-10,use_locking=False,centered=False,name='RMSProp')
     return optimizers_function
 
