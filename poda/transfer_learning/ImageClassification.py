@@ -66,7 +66,7 @@ class ImageClassification(object):
 
         return non_logit, output, base_var_list, full_var_list
 
-    def train(self, batch_size, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False):
+    def train(self, batch_size, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False):
         train_losess = []
         val_losess = []
 

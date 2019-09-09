@@ -93,7 +93,7 @@ class GeneratorImage():
 
             yield(image_data_batch,image_target_batch)
 
-    def batch_generator_from_directory(self, directory):
+    def generate_from_directory_manual(self, directory):
         """[summary]
         
         Arguments:
@@ -102,6 +102,20 @@ class GeneratorImage():
         list_path_image , list_target_image = self.get_list_image_and_label(path_dataset = directory)
         list_path_image , list_target_image = shuffle(list_path_image, list_target_image, random_state=0)
         return self.batch_generator(list_path_data=list_path_image, list_target_data=list_target_image)
+
+    def generate_from_directory_auto(self, directory, val_ratio=0.2):
+        """[summary]
+        
+        Arguments:
+            directory {[type]} -- [description]
+        """
+        list_path_image , list_target_image = self.get_list_image_and_label(path_dataset = directory)
+        list_path_image , list_target_image = shuffle(list_path_image, list_target_image, random_state=0)
+        split_size = 1 - val_ratio
+        train_data, train_target, val_data, val_target = self.split_dataset(list_path_data=list_path_image, list_target_data=list_target_image, split_sizes=split_size)        
+        train_generator = self.batch_generator(list_path_data=train_data, list_target_data=train_target)
+        val_generator = self.batch_generator(list_path_data=val_data, list_target_data=val_target)
+        return train_generator , val_generator
         
     def flip_image_horizontal(self, image):
         """[summary]
