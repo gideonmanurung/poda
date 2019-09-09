@@ -29,7 +29,7 @@ class VGG16(object):
         self.regularizer = regularizers
         self.scope = scopes
 
-    def vgg_block(self, input_tensor, num_block=5, batch_normalization=True, scope=None, reuse=None):
+    def vgg_block(self, input_tensor, num_block=5, batch_normalization=True, scope=None):
         with tf.variable_scope(scope, 'vgg_16', [input_tensor]):
             with tf.variable_scope('Block_1'):
                 conv_1 = convolution_2d(input_tensor=input_tensor, number_filters=64, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
@@ -73,21 +73,23 @@ class VGG16(object):
     def create_model(self):
         number_filter = self.input_tensor.get_shape().as_list()[-1]
 
-        with tf.variable_scope(self.scope, 'vgg_16', [self.input_tensor]):
+        vgg_base = self.vgg_block(input_tensor=self.input_tensor, num_block=self.num_block, batch_normalization=self.batch_normalization, scope=self.scope)
+
+        with tf.variable_scope(self.scope, 'vgg_16', [vgg_base]):
             base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
-            if num_depthwise_layer==None or num_depthwise_layer<0:
-                vgg_16 = flatten(input_tensor=self.input_tensor, names='flatten')
+            if self.num_depthwise_layer==None or self.num_depthwise_layer<0:
+                vgg_16 = flatten(input_tensor=vgg_base, names='flatten')
                 for i in range(0, self.num_dense_layer):
                     vgg_16 = dense(input_tensor=vgg_16, hidden_units=self.num_hidden_unit, activations=self.activation_dense, regularizers=self.regularizer, scale=self.dropout_rate)
             else:
                 for j in range(0,self.num_depthwise_layer):
-                    vgg_16 = depthwise_convolution_2d(input_tensor=self.input_tensor, number_filters=number_filter, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                    vgg_16 = depthwise_convolution_2d(input_tensor=vgg_base, number_filters=number_filter, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
                 vgg_16 = flatten(input_tensor=vgg_16, names='flatten')
 
             full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
-            non_logit = dense(input_tensor=vgg_16, hidden_units=classes, names='output')
+            non_logit = dense(input_tensor=vgg_16, hidden_units=self.classes, names='output')
 
             if self.classes > 2:
                 output = softmax(input_tensor=non_logit, names='output')
