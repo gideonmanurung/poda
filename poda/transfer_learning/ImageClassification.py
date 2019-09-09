@@ -75,23 +75,28 @@ class ImageClassification(object):
 
         init = tf.initializers.global_variables()
 
-        if dict_augmented_image > 0:
-            rotation_degree = dict_augmented_image['rotation_degree']
-            flip_horizontal = dict_augmented_image['flip_horizontal']
-            flip_vertical = dict_augmented_image['flip_vertical']
-            zoom_scale = dict_augmented_image['zoom_scale']
-            self.generator_train = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
-                                             flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
-            self.generator_val = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
-                                             flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
+        if manual_split_dataset:
+            if dict_augmented_image > 0:
+                rotation_degree = dict_augmented_image['rotation_degree']
+                flip_horizontal = dict_augmented_image['flip_horizontal']
+                flip_vertical = dict_augmented_image['flip_vertical']
+                zoom_scale = dict_augmented_image['zoom_scale']
+                generator_train = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+                                                flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
+                generator_val = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+                                                flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
+            else:
+                generator_train = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
+                generator_val = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
+                
+            path_dataset_train = os.path.join(self.dataset_folder_path, 'train')
+            path_dataset_val = os.path.join(self.dataset_folder_path, 'val')
+            generator_train.generate_from_directory_manual(directory=path_dataset_train)
+            generator_val.generate_from_directory_manual(directory=path_dataset_val)
         else:
-            self.generator_train = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
-            self.generator_val = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
-
-        path_dataset_train = os.path.join(self.dataset_folder_path, 'train')
-        path_dataset_val = os.path.join(self.dataset_folder_path, 'val')
-        self.generator_train.batch_generator_from_directory(directory=path_dataset_train)
-        self.generator_val.batch_generator_from_directory(directory=path_dataset_val)
+            generator = generator(batch_sizes=batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+                                                flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
+            generator_train, generator_val = generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
 
         main_graph_saver = tf.train.Saver(self.base_var_list)
         output_saver = tf.train.Saver()
@@ -101,7 +106,7 @@ class ImageClassification(object):
             os.makedirs(save_directory)
         msg = "Epoch: {0:>6} loss: {1:>6.3} - acc: {2:>6.3} - val_loss: {3:>6.3} - val_acc: {4:>6.3} - {5}"
         
-        list_image_val , _ = self.generator_val.get_list_image_and_label(path_dataset=path_dataset_val)
+        list_image_val , _ = generator_val.get_list_image_and_label(path_dataset=path_dataset_val)
 
         validation_iteration = int(len(list_image_val)/batch_size)
         
@@ -118,14 +123,14 @@ class ImageClassification(object):
             #else:
             #    main_graph_saver.restore(sess,output_model_path)
             
-            best_val_accuracy = 0.93
+            best_val_accuracy = 0.7
             for i in range(epoch):
                 #output_graph_model_path = os.path.join(save_directory, model_version+'_output_graph_'+str(counter_model))
                 sign = '-'
-                x_batch_train , y_batch_train = next(self.generator_train)
+                x_batch_train , y_batch_train = next(generator_train)
                 feed_dict_train = {self.input_tensor: x_batch_train , self.output_tensor: y_batch_train}
                 sess.run(optimizer,feed_dict=feed_dict_train)
-                y_prediction , train_loss = sess.run([top_layer_vgg16,loss], feed_dict=feed_dict_train)
+                y_prediction , train_loss = sess.run([self.output,loss], feed_dict=feed_dict_train)
 
                 train_accuracy = calculate_accuracy_classification(y_prediction,y_batch_train)
 
@@ -133,9 +138,9 @@ class ImageClassification(object):
                 tmp_val_acc = 0
 
                 for j in range(validation_iteration):
-                    x_batch_valid , y_batch_valid = next(val_batch_generator)
+                    x_batch_valid , y_batch_valid = next(generator_val)
                     feed_dict_valid = {self.input_tensor: x_batch_valid , self.output_tensor: y_batch_valid}
-                    y_validation , val_loss = sess.run([top_layer_vgg16,loss], feed_dict=feed_dict_valid)
+                    y_validation , val_loss = sess.run([self.output,loss], feed_dict=feed_dict_valid)
                     val_accuracy = calculate_accuracy_classification(y_validation,y_batch_valid)
 
                     tmp_val_loss += val_loss
