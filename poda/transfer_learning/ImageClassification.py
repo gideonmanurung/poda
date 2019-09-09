@@ -82,7 +82,7 @@ class ImageClassification(object):
 
         init = tf.initializers.global_variables()
 
-        if dict_augmented_image > 0:
+        if len(dict_augmented_image) > 0:
             rotation_degree = dict_augmented_image['rotation_degree']
             flip_horizontal = dict_augmented_image['flip_horizontal']
             flip_vertical = dict_augmented_image['flip_vertical']
@@ -94,27 +94,27 @@ class ImageClassification(object):
             zoom_scale = None
             
         if manual_split_dataset:
-            if dict_augmented_image > 0:
-                generator_train = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+            if len(dict_augmented_image) > 0:
+                gen_train = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
                                                 flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
-                generator_val = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+                gen_val = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
                                                 flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
             else:
-                generator_train = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
-                generator_val = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
+                gen_train = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
+                gen_val = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
                 
             path_dataset_train = os.path.join(self.dataset_folder_path, 'train')
             path_dataset_val = os.path.join(self.dataset_folder_path, 'val')
-            generator_train.generate_from_directory_manual(directory=path_dataset_train)
-            generator_val.generate_from_directory_manual(directory=path_dataset_val)
+            generator_train, num_train_data = gen_train.generate_from_directory_manual(directory=path_dataset_train)
+            generator_val, num_val_data = gen_val.generate_from_directory_manual(directory=path_dataset_val)
         else:
-            if dict_augmented_image > 0:
+            if len(dict_augmented_image) > 0:
                 image_generator = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
                                                 flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
             else:
                 image_generator = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
                 
-            generator_train, generator_val = image_generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
+            generator_train, generator_val, num_train_data, num_val_data = image_generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
 
         main_graph_saver = tf.train.Saver(base_var_list)
         output_saver = tf.train.Saver()
@@ -124,9 +124,8 @@ class ImageClassification(object):
             os.makedirs(save_directory)
         msg = "Epoch: {0:>6} loss: {1:>6.3} - acc: {2:>6.3} - val_loss: {3:>6.3} - val_acc: {4:>6.3} - {5}"
         
-        list_image_val , _ = generator_val.get_list_image_and_label(path_dataset=path_dataset_val)
-
-        validation_iteration = int(len(list_image_val)/self.batch_size)
+        train_iteration = int(num_train_data/self.batch_size)
+        validation_iteration = int(num_val_data/self.batch_size)
         
         #with tf.Session() as sess:
         #    writer = tf.summary.FileWriter("output", sess.graph)
@@ -143,19 +142,22 @@ class ImageClassification(object):
             
             best_val_accuracy = 0.7
             for i in range(epoch):
-                #output_graph_model_path = os.path.join(save_directory, model_version+'_output_graph_'+str(counter_model))
-                sign = '-'
-                x_batch_train , y_batch_train = next(generator_train)
-                feed_dict_train = {self.input_tensor: x_batch_train , self.output_tensor: y_batch_train}
-                sess.run(optimizer,feed_dict=feed_dict_train)
-                y_prediction , train_loss = sess.run([self.output,loss], feed_dict=feed_dict_train)
+                for j in range(train_iteration):
+                    #output_graph_model_path = os.path.join(save_directory, model_version+'_output_graph_'+str(counter_model))
+                    sign = '-'
+                    x_batch_train , y_batch_train = next(generator_train)
+                    feed_dict_train = {self.input_tensor: x_batch_train , self.output_tensor: y_batch_train}
+                    sess.run(optimizer,feed_dict=feed_dict_train)
+                    y_prediction , train_loss = sess.run([self.output,loss], feed_dict=feed_dict_train)
+                    train_accuracy = calculate_accuracy_classification(y_prediction,y_batch_train)
 
-                train_accuracy = calculate_accuracy_classification(y_prediction,y_batch_train)
+                    tmp_train_loss += train_loss
+                    tmp_train_acc += train_accuracy
 
-                tmp_val_loss = 0
-                tmp_val_acc = 0
+                train_loss = float(tmp_train_loss/train_iteration)
+                train_acc = float(tmp_train_acc/train_iteration)
 
-                for j in range(validation_iteration):
+                for k in range(validation_iteration):
                     x_batch_valid , y_batch_valid = next(generator_val)
                     feed_dict_valid = {self.input_tensor: x_batch_valid , self.output_tensor: y_batch_valid}
                     y_validation , val_loss = sess.run([self.output,loss], feed_dict=feed_dict_valid)
@@ -163,7 +165,7 @@ class ImageClassification(object):
 
                     tmp_val_loss += val_loss
                     tmp_val_acc += val_accuracy
-                
+                    
                 val_loss = float(tmp_val_loss/validation_iteration)
                 val_acc = float(tmp_val_acc/validation_iteration)
 
@@ -174,7 +176,7 @@ class ImageClassification(object):
                     best_val_accuracy = val_acc
                     sign = 'Found the Best '+str(counter_model)
                     counter_model+=1
-                
+                    
                 val_losess.append(val_loss)
                 train_losess.append(train_loss)
                 print(msg.format(i, train_loss, train_accuracy, val_loss, val_acc , sign))
