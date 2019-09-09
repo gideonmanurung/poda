@@ -44,7 +44,7 @@ def calculate_accuracy_mask(input_tensor, label, threshold=0.5):
     acc = 1. - error
     return acc
 
-def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy_mean', penalize_class=0):
+def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy_mean', penalize_class=0, names=None):
     """[summary]
     
     Arguments:
@@ -54,24 +54,36 @@ def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy
     Keyword Arguments:
         penalize_class {int} -- [description] (default: {0})
     """
+    if names!=None:
+        names = str(names)
+    else:
+        names= ''
+
     if type_loss_function == 'mse_loss_mean':
-        loss = tf.square(tf.subtract(input_tensor, label))
+        loss = tf.compat.v1.losses.mean_squared_error(labels=label, predictions=input_tensor)
         loss = tf.reduce_mean(loss)
     elif type_loss_function == 'mse_loss_sum':
-        loss = tf.square(tf.subtract(input_tensor, label))
+        loss = tf.compat.v1.losses.mean_squared_error(labels=label, predictions=input_tensor)
         loss = tf.reduce_sum(loss)
     elif type_loss_function == 'softmax_crosentropy_mean':
-        loss = tf.nn.softmax_cross_entropy_with_logits_v2(labels=label, logits=input_tensor)
-    loss = tf.reduce_sum(loss)
+        loss = tf.compat.v2.nn.softmax_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
+        loss = tf.reduce_mean(loss)
     elif type_loss_function == 'softmax_crosentropy_sum':
+        loss = tf.compat.v2.nn.softmax_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
+        loss = tf.reduce_sum(loss)
     elif type_loss_function == 'sigmoid_crossentropy_mean':
+        loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
+        loss = tf.reduce_mean(loss)
     elif type_loss_function == 'sigmoid_crossentropy_sum':
-    
+        loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
+        loss = tf.reduce_sum(loss)
+    """    
     if penalize_class != None:
         loss = loss + loss * self.output_tensor * penalize_class
     else:
         pass
     loss = tf.reduce_mean(loss)
+    """
     return loss
 
 def mse_loss_mean(input_tensor, label, names=None):
