@@ -18,6 +18,9 @@ def dropout(input_tensor, names, dropout_rates=0.2):
     else:
         names = ''
 
+    if dropout_rates==None:
+        dropout_rates = 0.2
+
     dropout_rates = 1 - dropout_rates
     return tf.nn.dropout(x=input_tensor, rate=dropout_rates, noise_shape=None,
                             seed=None,

@@ -14,7 +14,7 @@ def add(input_tensor_1, input_tensor_2, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'add'
 
     add_tensor = tf.math.add(x=input_tensor_1,y=input_tensor_2,name=names)
     return add_tensor
@@ -35,7 +35,7 @@ def concatenate(list_tensor, axis=-1, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'concatenate'
 
     concat_tensor = tf.concat(values=list_tensor,axis=axis,name=names)
     return concat_tensor
@@ -55,7 +55,7 @@ def flatten(input_tensor, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'flatten'
         
     tensor_shape = input_tensor.get_shape().as_list()
     output_shape = [tensor_shape[0], tensor_shape[1]*tensor_shape[2]*tensor_shape[3]]
@@ -76,7 +76,7 @@ def maximum(input_tensor_1, input_tensor_2, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'maximum'
 
     maximum_tensor = tf.math.maximum(x=input_tensor_1,y=input_tensor_2,name=names)
     return maximum_tensor
@@ -95,7 +95,7 @@ def minimum(input_tensor_1, input_tensor_2, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'minimum'
 
     minimum_tensor = tf.math.minimum(x=input_tensor_1,y=input_tensor_2,name=names)
     return minimum_tensor
@@ -114,7 +114,7 @@ def multiply(input_tensor_1, input_tensor_2, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'multipy'
 
     multiply_tensor = tf.math.multiply(x=input_tensor_1,y=input_tensor_2,name=names)
     return multiply_tensor
@@ -133,7 +133,7 @@ def substract(input_tensor_1, input_tensor_2, names=None):
     if names!=None:
         names = str(names)
     else:
-        names = ''
+        names = 'subtract'
 
     substract_tensor = tf.math.subtract(x=input_tensor_1,y=input_tensor_2,name=names)
     return substract_tensor

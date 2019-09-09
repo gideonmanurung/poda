@@ -6,7 +6,7 @@ from poda.layers.regularizer import *
 from poda.layers.convolutional import *
 
 class VGG16(object):
-    def __init__(self, input_tensor, num_blocks=5, classes=1000, batch_normalizations = True):
+    def __init__(self, input_tensor, num_blocks=5, classes=1000, batch_normalizations = True, num_depthwise_layers=None, num_dense_layers=1, num_hidden_units=4096, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None):
         """[summary]
         
         Arguments:
@@ -18,11 +18,18 @@ class VGG16(object):
             batch_normalization {bool} -- [description] (default: {True})
         """
         self.input_tensor = input_tensor
+        self.num_block = num_blocks
         self.classes = classes
         self.batch_normalization = batch_normalizations
-        self.num_block = num_blocks
+        self.num_depthwise_layer = num_depthwise_layers
+        self.num_dense_layer = num_dense_layers
+        self.num_hidden_unit = num_hidden_units
+        self.activation_dense = activation_denses
+        self.dropout_rate = dropout_rates
+        self.regularizer = regularizers
+        self.scope = scopes
 
-    def vgg_block(self, input_tensor, num_block, batch_normalization=True, scope=None, reuse=None):
+    def vgg_block(self, input_tensor, num_block=5, batch_normalization=True, scope=None, reuse=None):
         with tf.variable_scope(scope, 'vgg_16', [input_tensor]):
             with tf.variable_scope('Block_1'):
                 conv_1 = convolution_2d(input_tensor=input_tensor, number_filters=64, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
@@ -63,24 +70,28 @@ class VGG16(object):
 
         return vgg_16
 
-    def create_model(self, input_tensor, num_depthwise_layer=None, num_dense_layer=1, num_hidden_unit=512, activation_dense='relu', dropout_rate=None, regularizer=None, classes=1000, scope=None):
-        number_filter = input_tensor.get_shape().as_list()[-1]
+    def create_model(self):
+        number_filter = self.input_tensor.get_shape().as_list()[-1]
 
-        with tf.variable_scope(scope, 'vgg_16', [input_tensor]):
+        with tf.variable_scope(self.scope, 'vgg_16', [self.input_tensor]):
             base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
             if num_depthwise_layer==None or num_depthwise_layer<0:
-                vgg_16 = dense(input_tensor=input_tensor, hidden_units=num_hidden_unit, names=None, activations=activation_dense, regularizers=regularizer)
+                vgg_16 = flatten(input_tensor=self.input_tensor, names='flatten')
+                for i in range(0, self.num_dense_layer):
+                    vgg_16 = dense(input_tensor=vgg_16, hidden_units=self.num_hidden_unit, activations=self.activation_dense, regularizers=self.regularizer, scale=self.dropout_rate)
             else:
-                for i in range(0,num_depthwise_layer):
-                    vgg_16 = depthwise_convolution_2d(input_tensor=input_tensor, number_filters=number_filter, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                for j in range(0,self.num_depthwise_layer):
+                    vgg_16 = depthwise_convolution_2d(input_tensor=self.input_tensor, number_filters=number_filter, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None)
+                vgg_16 = flatten(input_tensor=vgg_16, names='flatten')
+
+            full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
 
             non_logit = dense(input_tensor=vgg_16, hidden_units=classes, names='output')
 
-            if classes > 2:
-                output = softmax(input_tensor=non_logit)
+            if self.classes > 2:
+                output = softmax(input_tensor=non_logit, names='output')
             else:
-                output = sigmoid(input_tensor=non_logit)
+                output = sigmoid(input_tensor=non_logit, names='output')
 
-            full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         return non_logit, output, base_var_list, full_var_list

@@ -19,31 +19,31 @@ def dense(input_tensor, hidden_units, names=None, activations=None, regularizers
         [Tensor] -- [A trainable tensor]
     """
     if names!=None:
-        names = str(names)
+        name = str(names)
     else:
-        names = 'dense'
+        name = 'dense'
 
-    weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=names)
+    weight = new_weights(shapes=[input_tensor.get_shape().as_list()[1], hidden_units], names=name)
 
-    bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=names, bias_initializers=bias_initializers)
+    bias = new_biases(shapes=[input_tensor.get_shape().as_list()[0], hidden_units], names=name, bias_initializers=bias_initializers)
 
     layer = tf.matmul(input_tensor, weight)
     layer += bias
 
     if activations!=None:
-        layer = define_activation_function(input_tensor=layer, activation_name=activation, names=names)
+        layer = define_activation_function(input_tensor=layer, activation_names=activations, names=name)
     else:
         layer = layer
 
     if regularizers=='both':
-        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
-        layer = l2_regularization(input_tensor=layer, names=names)
+        layer = dropout(input_tensor=layer, dropout_rates=scale, names=name)
+        layer = l2_regularization(input_tensor=layer, names=name)
     elif regularizers=='l1':
         layer = l1_regularization(input_tensor=layer)
     elif regularizers=='l2':
         layer = l2_regularization(input_tensor=layer)
     elif regularizers=='dropout':
-        layer = dropout(input_tensor=layer, dropout_rates=scale, names=names)
+        layer = dropout(input_tensor=layer, dropout_rates=scale, names=name)
     else:
         layer = layer
 

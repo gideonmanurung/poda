@@ -8,7 +8,7 @@ from poda.layers.convolutional import *
 
 
 class InceptionV4(object):
-    def __init__(self, input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=1000, batch_normalizations = True):
+    def __init__(self, input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=1000, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None):
         """[summary]
         
         Arguments:
@@ -26,8 +26,10 @@ class InceptionV4(object):
         self.n_inception_b = n_inception_b
         self.n_inception_c = n_inception_c
         self.batch_normalizations = batch_normalizations
-
-        self.create_model(input_tensor=self.input_tensor, classes=self.classes, n_inception_a=self.n_inception_a, n_inception_b=self.n_inception_b, n_inception_c=self.n_inception_c, batch_normalizations=self.batch_normalizations)
+        self.activation_dense = activation_denses
+        self.dropout_rate = dropout_rates
+        self.regularizer = regularizers
+        self.scope = scopes        
 
 
     def conv_block(self, inputs, filters, kernel_size, strides=(2,2), padding='VALID',  dropout_rate=0.2, activation=None, name=None, use_batch_norm=True):
@@ -244,7 +246,7 @@ class InceptionV4(object):
         return concat_1
 
     # Create Model
-    def create_model(self, input_tensor, classes=1000, n_inception_a=4, n_inception_b=7, n_inception_c=3, batch_normalizations=True, scope=None):
+    def create_model(self):
         """[summary]
         
         Arguments:
@@ -257,21 +259,21 @@ class InceptionV4(object):
             n_inception_c {int} -- [description] (default: {3})
             batch_normalizations {bool} -- [description] (default: {True})
         """
-        with tf.variable_scope(scope, 'inception_v4', [input_tensor]):
-            stem_layer = self.stem_block(input_tensor=input_tensor, batch_normalization=batch_normalizations)
+        with tf.variable_scope(self.scope, 'inception_v4', [self.input_tensor]):
+            stem_layer = self.stem_block(input_tensor=self.input_tensor, batch_normalization=self.batch_normalizations)
 
-            for i in range(0,n_inception_a):
-                inception_a_layer = self.inception_a(input_tensor=stem_layer, batch_normalization=batch_normalizations)
+            for i in range(0,self.n_inception_a):
+                inception_a_layer = self.inception_a(input_tensor=stem_layer, batch_normalization=self.batch_normalizations)
 
-            reduction_a_layer = self.reduction_a(input_tensor=inception_a_layer, batch_normalization=batch_normalizations)
+            reduction_a_layer = self.reduction_a(input_tensor=inception_a_layer, batch_normalization=self.batch_normalizations)
 
-            for j in range(0,n_inception_b):
-                inception_b_layer = self.inception_b(input_tensor=reduction_a_layer, batch_normalization=batch_normalizations)
+            for j in range(0,self.n_inception_b):
+                inception_b_layer = self.inception_b(input_tensor=reduction_a_layer, batch_normalization=self.batch_normalizations)
 
-            reduction_b_layer = self.reduction_b(input_tensor=inception_b_layer, batch_normalization=batch_normalizations)
+            reduction_b_layer = self.reduction_b(input_tensor=inception_b_layer, batch_normalization=self.batch_normalizations)
 
-            for k in range(0,n_inception_c):
-                inception_c_layer = self.inception_c(input_tensor=reduction_b_layer, batch_normalization=batch_normalizations)
+            for k in range(0,self.n_inception_c):
+                inception_c_layer = self.inception_c(input_tensor=reduction_b_layer, batch_normalization=self.batch_normalizations)
 
             if n_inception_a == 0:
                 inception_v4 = stem_layer
@@ -288,11 +290,11 @@ class InceptionV4(object):
 
             inception_v4 = avarage_pool_2d(input_tensor=inception_v4, kernel_sizes=(3,3), padding='SAME', stride_sizes=(1,1), names='output')
 
-            inception_v4 =  dropout(input_tensor=inception_v4, names='output', dropout_rates=0.2)
+            inception_v4 =  dropout(input_tensor=inception_v4, names='output', dropout_rates=self.dropout_rate)
 
-            non_logit = dense(input_tensor=inception_v4, hidden_units=classes, names='output')
+            non_logit = dense(input_tensor=inception_v4, hidden_units=self.classes, names='output')
             
-            if classes > 2:
+            if self.classes > 2:
                 output = softmax(input_tensor=non_logit)
             else:
                 output = sigmoid(input_tensor=non_logit)
