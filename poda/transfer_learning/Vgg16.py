@@ -75,9 +75,9 @@ class VGG16(object):
 
         vgg_base = self.vgg_block(input_tensor=self.input_tensor, num_block=self.num_block, batch_normalization=self.batch_normalization, scope=self.scope)
 
+        base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+        
         with tf.variable_scope(self.scope, 'vgg_16', [vgg_base]):
-            base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-
             if self.num_depthwise_layer==None or self.num_depthwise_layer<0:
                 vgg_16 = flatten(input_tensor=vgg_base, names='flatten')
                 for i in range(0, self.num_dense_layer):

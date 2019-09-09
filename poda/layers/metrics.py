@@ -57,7 +57,7 @@ def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy
     if names!=None:
         names = str(names)
     else:
-        names= ''
+        names= 'loss'
 
     if type_loss_function == 'mse_loss_mean':
         loss = tf.compat.v1.losses.mean_squared_error(labels=label, predictions=input_tensor)

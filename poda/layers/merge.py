@@ -57,9 +57,7 @@ def flatten(input_tensor, names=None):
     else:
         names = 'flatten'
         
-    tensor_shape = input_tensor.get_shape().as_list()
-    output_shape = [tensor_shape[0], tensor_shape[1]*tensor_shape[2]*tensor_shape[3]]
-    flatten_tensor = tf.reshape(tensor=input_tensor,shape=output_shape,name=names)
+    flatten_tensor = tf.layers.flatten(input_tensor)
     return flatten_tensor
 
 def maximum(input_tensor_1, input_tensor_2, names=None):

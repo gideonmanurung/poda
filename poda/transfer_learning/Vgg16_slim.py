@@ -74,9 +74,9 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
     if num_depthwise_layer!=None:
         num_depthwise_layer = num_depthwise_layer * 3
         for i in range(num_depthwise_layer):
-            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
-                                                      kernel_sizes=(3,3), stride_sizes=(2,2), padding='same',
-                                                      activation='relu',names='depthwise_conv2d_'+str(i))
+            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.get_shape().as_list()[-1], 
+                                                      kernel_sizes=(3,3), stride_sizes=(2,2), paddings='same',
+                                                      activations='relu',names=+str(i))
             previous_layer = depth_wise_net
     else:
         depth_wise_net = previous_layer
@@ -85,15 +85,14 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
 
     if num_fully_connected_layer !=None:
         for j in range(num_fully_connected_layer):
-            fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
-                                                  activation_function=activation_fully_connected,
-                                                  dropout_layer=dropout_keep_prob,regularizers=regularizers,
-                                                  scale=dropout_keep_prob,name='fully_connected_'+str(j))
+            fully_connected_net = dense(input_tensor=flatten_layer,hidden_units=num_hidden_unit,
+                                                  activations=activation_fully_connected,regularizers=regularizers,
+                                                  scale=dropout_keep_prob,names='fully_connected_'+str(j))
             flatten_layer = fully_connected_net
     else:
         flatten_layer = flatten_layer
 
-    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
+    non_logit = dense(input_tensor=flatten_layer,hidden_units=num_classes,activations=None)
     if num_classes > 2:
         output = softmax(input_tensor=non_logit)
     else:
