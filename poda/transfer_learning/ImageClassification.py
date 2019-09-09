@@ -82,12 +82,19 @@ class ImageClassification(object):
 
         init = tf.initializers.global_variables()
 
+        if dict_augmented_image > 0:
+            rotation_degree = dict_augmented_image['rotation_degree']
+            flip_horizontal = dict_augmented_image['flip_horizontal']
+            flip_vertical = dict_augmented_image['flip_vertical']
+            zoom_scale = dict_augmented_image['zoom_scale'] 
+        else:
+            rotation_degree = None
+            flip_horizontal = False
+            flip_vertical = False
+            zoom_scale = None
+            
         if manual_split_dataset:
             if dict_augmented_image > 0:
-                rotation_degree = dict_augmented_image['rotation_degree']
-                flip_horizontal = dict_augmented_image['flip_horizontal']
-                flip_vertical = dict_augmented_image['flip_vertical']
-                zoom_scale = dict_augmented_image['zoom_scale']
                 generator_train = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
                                                 flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
                 generator_val = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
@@ -101,9 +108,13 @@ class ImageClassification(object):
             generator_train.generate_from_directory_manual(directory=path_dataset_train)
             generator_val.generate_from_directory_manual(directory=path_dataset_val)
         else:
-            generator = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
+            if dict_augmented_image > 0:
+                image_generator = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size, rotation_degrees=rotation_degree, flip_image_horizontal_status=flip_horizontal, 
                                                 flip_image_vertical_status=flip_vertical, zoom_scales=zoom_scale)
-            generator_train, generator_val = generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
+            else:
+                image_generator = generator(batch_sizes=self.batch_size, color_modes=self.color_mode, image_sizes=self.image_size)
+                
+            generator_train, generator_val = image_generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
 
         main_graph_saver = tf.train.Saver(base_var_list)
         output_saver = tf.train.Saver()
