@@ -92,11 +92,7 @@ class GeneratorImage():
 
             image_data_batch = np.array(image_data_batch)            
             image_data_batch = image_data_batch.reshape((self.batch_size*number_augmentation,self.image_size[0],self.image_size[1],self.image_size[2])).astype(np.float32)
-            image_target_batch = np.array(image_target_batch)
-            print(image_data_batch.shape)            
-            print(image_target_batch)
-
-            
+            image_target_batch = np.array(image_target_batch)            
             
             yield(image_data_batch,image_target_batch)
 

@@ -4,6 +4,7 @@ from poda.layers.dense import *
 from poda.layers.metrics import *
 from poda.layers.optimizer import *
 from poda.layers.activation import *
+from utils.visualize_training import *
 from poda.layers.convolutional import *
 from poda.transfer_learning.Vgg16_slim import *
 from poda.transfer_learning.Vgg16 import VGG16
@@ -78,16 +79,22 @@ class ImageClassification(object):
         return non_logit, output, base_var_list, full_var_list
 
     def train(self, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False, use_pretrain = False, path_pretrained=''):
+        train_accuracy = []
         train_losess = []
+        val_accuracy = []
         val_losess = []
 
         if self.custom_architecture:
             non_logit, output, base_var_list, full_var_list = self.create_model(dict_architecture=self.dict_var_architecture)
         else:
             non_logit, output, base_var_list, full_var_list = self.create_model(dict_architecture={})
+            
+        accuracy = calculate_accuracy_classification(output,self.output_tensor)
 
-        loss = calculate_loss(input_tensor=non_logit, label=self.output_tensor, type_loss_function='sigmoid_crossentropy_mean')
-        optimizer = optimizers(optimizers_names='adam',learning_rates=0.0001).minimize(loss)
+        cost = calculate_loss(input_tensor=non_logit, label=self.output_tensor, type_loss_function='softmax_crossentropy_mean')
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            optimizer = optimizers(optimizers_names='adam',learning_rates=0.0001).minimize(cost)
 
         init = tf.initializers.global_variables()
 
@@ -153,44 +160,54 @@ class ImageClassification(object):
             
             best_val_accuracy = 0.7
             for i in range(epoch):
+                print('Epoch '+(i)+'/'+str(epoch))
+                tmp_train_loss = []
+                tmp_train_acc = []
                 for j in range(train_iteration):
                     #output_graph_model_path = os.path.join(save_directory, model_version+'_output_graph_'+str(counter_model))
-                    sign = '-'
+                    sign = '--------------'
                     x_batch_train , y_batch_train = next(generator_train)
                     feed_dict_train = {self.input_tensor: x_batch_train , self.output_tensor: y_batch_train}
                     sess.run(optimizer,feed_dict=feed_dict_train)
-                    y_prediction , train_loss = sess.run([self.output,loss], feed_dict=feed_dict_train)
-                    train_accuracy = calculate_accuracy_classification(y_prediction,y_batch_train)
+                    y_prediction , train_loss = sess.run([output,cost], feed_dict=feed_dict_train)
+                    train_acc = sess.run(accuracy, feed_dict=feed_dict_train)
 
-                    tmp_train_loss += train_loss
-                    tmp_train_acc += train_accuracy
+                    print_progress_training(number_iteration=train_iteration, index_iteration=j, metrics_acc=train_acc, metrics_loss=train_loss, type_progress="train")
+                    
+                    tmp_train_loss.append(train_loss)
+                    tmp_train_acc.append(train_acc)
 
-                train_loss = float(tmp_train_loss/train_iteration)
-                train_acc = float(tmp_train_acc/train_iteration)
+                avg_train_loss = sum(tmp_train_loss)/(len(tmp_train_loss)+0.0001)
+                avg_train_acc = sum(tmp_train_acc)/(len(tmp_train_acc)+0.0001)
 
+                tmp_val_loss = []
+                tmp_val_acc = []
                 for k in range(validation_iteration):
                     x_batch_valid , y_batch_valid = next(generator_val)
                     feed_dict_valid = {self.input_tensor: x_batch_valid , self.output_tensor: y_batch_valid}
-                    y_validation , val_loss = sess.run([self.output,loss], feed_dict=feed_dict_valid)
-                    val_accuracy = calculate_accuracy_classification(y_validation,y_batch_valid)
+                    y_validation , val_loss = sess.run([output,cost], feed_dict=feed_dict_valid)
+                    val_acc = sess.run(accuracy, feed_dict=feed_dict_valid)
 
-                    tmp_val_loss += val_loss
-                    tmp_val_acc += val_accuracy
+                    print_progress_training(number_iteration=validation_iteration, index_iteration=k, metrics_acc=val_acc, metrics_loss=val_loss, type_progress="val")
+
+                    tmp_val_loss.append(val_loss)
+                    tmp_val_acc.append(val_acc)
                     
-                val_loss = float(tmp_val_loss/validation_iteration)
-                val_acc = float(tmp_val_acc/validation_iteration)
-
-                if val_acc > best_val_accuracy:
+                avg_val_loss = sum(tmp_val_loss)/(len(tmp_val_loss)+0.0001)
+                avg_val_acc = sum(tmp_val_acc)/(len(tmp_val_acc)+0.0001)
+                
+                print(avg_val_acc)
+                if avg_val_acc > best_val_accuracy:
                     #main_graph_model_path = os.path.join(save_directory,model_version+'_main_graph')
                     #main_graph_saver.save(sess=sess,save_path=main_graph_model_path)
                     output_saver.save(sess=sess,save_path=save_directory)
-                    best_val_accuracy = val_acc
+                    best_val_accuracy = avg_val_acc
                     sign = 'Found the Best '+str(counter_model)
                     counter_model+=1
                     
-                val_losess.append(val_loss)
-                train_losess.append(train_loss)
-                print(msg.format(i, train_loss, train_accuracy, val_loss, val_acc , sign))
+                train_accuracy.append(avg_train_acc)
+                train_losess.append(avg_train_loss)
+                val_accuracy.append(avg_val_acc)
+                val_losess.append(avg_val_loss)
 
-        
-
+                print(msg.format(i, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc , sign))

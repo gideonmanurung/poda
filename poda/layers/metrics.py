@@ -11,11 +11,8 @@ def calculate_accuracy_classification(input_tensor, label, threshold=0.5):
     Keyword Arguments:
         threshold {float} -- [description] (default: {0.5})
     """
-    output = np.reshape(input_tensor, (len(input_tensor)))
-    labels = np.reshape(label, (len(label)))
-    output = (output > threshold).astype(np.int)
-    correct = np.sum(labels == output).astype(np.int)
-    accuracy = float(correct/len(labels))
+    matches = tf.equal(tf.argmax(input_tensor, 1), tf.argmax(label, 1))
+    accuracy = tf.reduce_mean(tf.cast(matches, tf.float32))
     return accuracy
 
 def calculate_accuracy_mask(input_tensor, label, threshold=0.5):
@@ -77,13 +74,9 @@ def calculate_loss(input_tensor, label, type_loss_function='sigmoid_crossentropy
     elif type_loss_function == 'sigmoid_crossentropy_sum':
         loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
         loss = tf.reduce_sum(loss)
-    """    
-    if penalize_class != None:
-        loss = loss + loss * self.output_tensor * penalize_class
     else:
-        pass
-    loss = tf.reduce_mean(loss)
-    """
+        loss = tf.compat.v2.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=input_tensor, name=names)
+        loss = tf.reduce_mean(loss)
     return loss
 
 def mse_mean(input_tensor, label, names=None):
