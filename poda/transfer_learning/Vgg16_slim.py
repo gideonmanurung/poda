@@ -33,9 +33,10 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from poda.layers.convolutional import *
 from poda.layers.dense import *
+from poda.layers.merge import *
 from poda.layers.activation import *
+from poda.layers.convolutional import *
 from poda.utils import *
 slim = tf.contrib.slim
 
@@ -74,43 +75,38 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
     if num_depthwise_layer!=None:
         num_depthwise_layer = num_depthwise_layer * 3
         for i in range(num_depthwise_layer):
-            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.get_shape().as_list()[-1], 
+            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=1, 
                                                       kernel_sizes=(3,3), stride_sizes=(2,2), paddings='same',
-                                                      activations='relu',names=+str(i))
+                                                      activations='relu',names=str(i))
             previous_layer = depth_wise_net
-    else:
-        depth_wise_net = previous_layer
 
-    flatten_layer = flatten(input_tensor=depth_wise_net)
+    flatten_layer = flatten(input_tensor=previous_layer)
 
     if num_fully_connected_layer !=None:
         for j in range(num_fully_connected_layer):
             fully_connected_net = dense(input_tensor=flatten_layer,hidden_units=num_hidden_unit,
                                                   activations=activation_fully_connected,regularizers=regularizers,
-                                                  scale=dropout_keep_prob,names='fully_connected_'+str(j))
+                                                  scale=dropout_keep_prob,names=str(j))
             flatten_layer = fully_connected_net
     else:
         flatten_layer = flatten_layer
 
     non_logit = dense(input_tensor=flatten_layer,hidden_units=num_classes,activations=None)
     if num_classes > 2:
-        output = softmax(input_tensor=non_logit)
+        output = softmax(input_tensor=non_logit, names='output')
     else:
-        output = sigmoid(input_tensor=non_logit)
+        output = sigmoid(input_tensor=non_logit, names='output')
     return non_logit, output
     
-def vgg16(input_tensor,num_classes=1000,
-        num_blocks=5,is_training=False,num_depthwise_layer=None,
-        num_fully_connected_layer=1,num_hidden_unit=512,
-        activation_fully_connected=None,regularizers=None):
+def vgg16(input_tensor,num_classes=1000,num_blocks=5,num_depthwise_layer=None,num_fully_connected_layer=1,num_hidden_unit=512,activation_fully_connected=None,regularizers=None):
     net = build_base_layer_model(input_tensor=input_tensor,num_blocks=num_blocks)
-    var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-    non_logit , top_layer_vgg = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,
-                                                    num_fully_connected_layer=num_fully_connected_layer,
-                                                    num_hidden_unit=num_hidden_unit,
-                                                    activation_fully_connected=activation_fully_connected,regularizers=regularizers)
+    base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    non_logit , output = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,num_fully_connected_layer=num_fully_connected_layer,num_hidden_unit=num_hidden_unit,
+                                               activation_fully_connected=activation_fully_connected,regularizers=regularizers,num_classes=num_classes)
 
-    return var_list , non_logit , top_layer_vgg
+    full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+
+    return non_logit , output , base_var_list , full_var_list
 
 def vgg_arg_scope(self,weight_decay=0.0005):
     with slim.arg_scope([slim.conv2d, slim.fully_connected],

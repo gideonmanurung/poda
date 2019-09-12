@@ -257,12 +257,12 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
 
     return layer
 
-def depthwise_convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
+def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
     """[Function for adding depthwise convolution 2D layer]
     
     Arguments:
         input_tensor {[float, double, int32, int64, uint8, int16, or int8]} -- [A Tensor representing prelayer values]
-        number_filters {[int]} -- [the dimensionality of the output space (i.e. the number of filters in the convolution).]
+        number_filters {[int]} -- [the multiplier dimensionality of the output space (i.e. the number of filters in the convolution).]
     
     Keyword Arguments:
         kernel_size {int , int} -- [Size of kernel] (default: {(3,3)})

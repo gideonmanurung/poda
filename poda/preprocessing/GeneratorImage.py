@@ -36,8 +36,6 @@ class GeneratorImage():
         """
         counter_image = 0
         number_class = np.amax(list_target_data)
-        couter_rotation = 0 
-        number_rotation = int(360/self.rotation_degree)
         while True:
             image_data_batch = []
             image_target_batch = []
@@ -54,43 +52,52 @@ class GeneratorImage():
                 image = image/255.0
 
                 image_data_batch.append(image)
-                image_target_batch.append(list_target_data[counter_image])
+                #image_target_batch.append(list_target_data[counter_image])
                 if self.rotation_degree!=None:
+                    number_rotation = int(360/self.rotation_degree)
                     for j in range(number_rotation):
                         radian_rotation = self.rotation_degree
                         image_rotation = self.rotate_image(image, radian_rotation)
                         radian_rotation += self.rotation_degree
                         image_data_batch.append(image_rotation)
-                        image_target_batch.append(list_target_data[counter_image])
+                        #image_target_batch.append(list_target_data[counter_image])
                         number_augmentation += 1
                 
                 if self.flip_image_horizontal_status==True:
                     image_flip = self.flip_image_horizontal(image)
                     image_data_batch.append(image_flip)
-                    image_target_batch.append(list_target_data[counter_image])
+                    #image_target_batch.append(list_target_data[counter_image])
                     number_augmentation += 1
 
                 if self.flip_image_vertical_status==True:
                     image_flip = self.flip_image_vertical(image)
                     image_data_batch.append(image_flip)
-                    image_target_batch.append(list_target_data[counter_image])
+                    #image_target_batch.append(list_target_data[counter_image])
                     number_augmentation += 1
 
-                if self.zoom_scales!=None:
+                if self.zoom_scale!=None:
                     image_zoom = self.zoom_image(image,self.zoom_scale)
                     image_data_batch.append(image_zoom)
-                    image_target_batch.append(list_target_data[counter_image])
+                    #image_target_batch.append(list_target_data[counter_image])
                     number_augmentation += 1
+                
+                for i in range(0,number_augmentation):
+                    tmp_target_batch = np.zeros(number_class+1).astype(np.float32)
+                    tmp_target_batch[list_target_data[counter_image]-1] = 1
+                    image_target_batch.append(tmp_target_batch)
                 
                 counter_image+=1
                 if counter_image >= len(list_path_data):
                     counter_image = 0
 
             image_data_batch = np.array(image_data_batch)            
-            image_data_batch = image_data_batch.reshape((batch_size*number_augmentation,self.image_size[0],self.image_size[1],self.image_size[2])).astype(np.float32)
-            image_target_batch = np.array(image_target_batch).reshape(-1)
-            image_target_batch = np.eye(number_class)[image_target_batch]
+            image_data_batch = image_data_batch.reshape((self.batch_size*number_augmentation,self.image_size[0],self.image_size[1],self.image_size[2])).astype(np.float32)
+            image_target_batch = np.array(image_target_batch)
+            print(image_data_batch.shape)            
+            print(image_target_batch)
 
+            
+            
             yield(image_data_batch,image_target_batch)
 
     def generate_from_directory_manual(self, directory):
@@ -118,7 +125,7 @@ class GeneratorImage():
         num_train_data = self.get_num_data(train_data)
         num_val_data = self.get_num_data(val_data) 
         return train_generator , val_generator , num_train_data , num_val_data
-
+    
     def get_num_data(self, list_path_data):
         """[summary]
         
