@@ -4,8 +4,8 @@ from poda.layers.dense import *
 from poda.layers.metrics import *
 from poda.layers.optimizer import *
 from poda.layers.activation import *
-from utils.visualize_training import *
 from poda.layers.convolutional import *
+from poda.utils.visualize_training import *
 from poda.transfer_learning.Vgg16_slim import *
 from poda.transfer_learning.Vgg16 import VGG16
 from poda.preprocessing.GeneratorImage import GeneratorImage as generator
