@@ -18,7 +18,7 @@ def adadelta(learning_rates=0.0001, rho=0.95, epsilon=1e-08, use_lockings=False,
     else:
         names= ''
     
-    optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rates,rho=rho,epsilon=epsilon,use_locking=use_lockings,name=names)
+    optimizer = tf.compat.v1.train.AdadeltaOptimizer(learning_rate=learning_rates,rho=rho,epsilon=epsilon,use_locking=use_lockings,name=names)
     return optimizer
 
 def adagrad(learning_rates=0.0001, initial_accumulator_value=0.1, use_lockings=False, names=None):
@@ -38,7 +38,7 @@ def adagrad(learning_rates=0.0001, initial_accumulator_value=0.1, use_lockings=F
     else:
         names= ''
     
-    optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rates,initial_accumulator_value=initial_accumulator_value,use_locking=use_lockings,name=names)
+    optimizer = tf.compat.v1.train.AdagradOptimizer(learning_rate=learning_rates,initial_accumulator_value=initial_accumulator_value,use_locking=use_lockings,name=names)
     return optimizer
 
 def adam(learning_rates=0.0001, beta1=0.9, beta2=0.999, epsilon=1e-08, use_lockings=False, names=None):
@@ -60,7 +60,7 @@ def adam(learning_rates=0.0001, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locki
     else:
         names= ''
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rates,beta1=beta1,beta2=beta2,epsilon=epsilon,use_locking=use_lockings,name=names)
+    optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rates,beta1=beta1,beta2=beta2,epsilon=epsilon,use_locking=use_lockings,name=names)
     return optimizer
 
 def optimizers(optimizers_names='adam', learning_rates=0.0001):
@@ -75,15 +75,15 @@ def optimizers(optimizers_names='adam', learning_rates=0.0001):
     """
     optimizers_function = None
     if optimizers_names=='adam':
-        optimizers_function = tf.train.AdamOptimizer(learning_rate=learning_rates,beta1=0.9,beta2=0.999,epsilon=1e-08,use_locking=False,name='Adam')
+        optimizers_function = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rates,beta1=0.9,beta2=0.999,epsilon=1e-08,use_locking=False,name='Adam')
     elif optimizers_names=='adadelta':
-        optimizers_function = tf.train.AdadeltaOptimizer(learning_rate=learning_rates,rho=0.95,epsilon=1e-08,use_locking=False,name='Adadelta')
+        optimizers_function = tf.compat.v1.train.AdadeltaOptimizer(learning_rate=learning_rates,rho=0.95,epsilon=1e-08,use_locking=False,name='Adadelta')
     elif optimizers_names=='adagrad':
-        optimizers_function = tf.train.AdagradOptimizer(learning_rate=learning_rates,initial_accumulator_value=0.1,use_locking=False,name='Adagrad')
+        optimizers_function = tf.compat.v1.train.AdagradOptimizer(learning_rate=learning_rates,initial_accumulator_value=0.1,use_locking=False,name='Adagrad')
     elif optimizers_names=='sgd':
-        optimizers_function = tf.train.GradientDescentOptimizer(learning_rate=learning_rates,use_locking=False,name='GradientDescent')
+        optimizers_function = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=learning_rates,use_locking=False,name='GradientDescent')
     elif optimizers_names=='rmsprop':
-        optimizers_function = tf.train.RMSPropOptimizer(learning_rate=learning_rates,decay=0.9,momentum=0.0,epsilon=1e-10,use_locking=False,centered=False,name='RMSProp')
+        optimizers_function = tf.compat.v1.train.RMSPropOptimizer(learning_rate=learning_rates,decay=0.9,momentum=0.0,epsilon=1e-10,use_locking=False,centered=False,name='RMSProp')
     return optimizers_function
 
 def rmsprop(learning_rates=0.0001, decay=0.9, momentum=0.0, epsilon=1e-10, use_lockings=False, centered=False, names=None):
@@ -104,7 +104,7 @@ def rmsprop(learning_rates=0.0001, decay=0.9, momentum=0.0, epsilon=1e-10, use_l
     else:
         names= ''
     
-    optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rates,decay=decay,momentum=momentum,epsilon=epsilon,use_locking=use_lockings,centered=centered,name=names)
+    optimizer = tf.compat.v1.train.RMSPropOptimizer(learning_rate=learning_rates,decay=decay,momentum=momentum,epsilon=epsilon,use_locking=use_lockings,centered=centered,name=names)
     return optimizer
 
 def sgd(learning_rates=0.0001, use_lockings=False, names=None):
@@ -123,5 +123,5 @@ def sgd(learning_rates=0.0001, use_lockings=False, names=None):
     else:
         names= ''
 
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rates,use_locking=use_lockings,name=names)
+    optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=learning_rates,use_locking=use_lockings,name=names)
     return optimizer

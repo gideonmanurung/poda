@@ -141,7 +141,7 @@ def sigmoid(input_tensor , names=None):
     """
     return tf.nn.sigmoid(x=input_tensor,name='activation_sigmoid_'+names)
 
-def softmax(input_tensor, names=None, axis=None, dim=None):
+def softmax(input_tensor, names=None, axis=None):
     """[Computes softmax activations]
     
     Arguments:
@@ -155,7 +155,7 @@ def softmax(input_tensor, names=None, axis=None, dim=None):
     Returns:
         [Tensor] -- [A tensor dtype tf.float32 with activation softmax]
     """
-    return tf.nn.softmax(logits=input_tensor,axis=axis,name='activation_softmax_'+names,dim=dim)
+    return tf.nn.softmax(logits=input_tensor,axis=axis,name='activation_softmax_'+names)
 
 def softsign(input_tensor, names=None):
     """[Computes softsign: features / (abs(features) + 1).]

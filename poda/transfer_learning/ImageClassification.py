@@ -8,6 +8,7 @@ from poda.layers.convolutional import *
 from poda.utils.visualize_training import *
 from poda.transfer_learning.Vgg16_slim import *
 from poda.transfer_learning.Vgg16 import VGG16
+from poda.transfer_learning.InceptionV4 import InceptionV4
 from poda.preprocessing.GeneratorImage import GeneratorImage as generator
 
 class ImageClassification(object):
@@ -70,7 +71,7 @@ class ImageClassification(object):
             non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
                                                                        num_fully_connected_layer=num_dense_layer,num_hidden_unit=num_hidden_unit,activation_fully_connected=activation_dense,regularizers=regularizer)
         elif self.type_architecture == 'inception_v4':
-            model = None
+            model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
             non_logit, output, base_var_list, full_var_list = None , None , None , None
             ###NEED FIX THIS
             #model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
@@ -78,7 +79,7 @@ class ImageClassification(object):
 
         return non_logit, output, base_var_list, full_var_list
 
-    def train(self, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False, use_pretrain = False, path_pretrained=''):
+    def train(self, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False, use_pretrain = False, path_pretrained='', threshold_best_model=0.5, optimizers_name='adam', lr=0.0001):
         train_accuracy = []
         train_losess = []
         val_accuracy = []
@@ -92,11 +93,11 @@ class ImageClassification(object):
         accuracy = calculate_accuracy_classification(output,self.output_tensor)
 
         cost = calculate_loss(input_tensor=non_logit, label=self.output_tensor, type_loss_function='softmax_crossentropy_mean')
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        update_ops = tf.compat.v1.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            optimizer = optimizers(optimizers_names='adam',learning_rates=0.0001).minimize(cost)
+            optimizer = optimizers(optimizers_names=optimizers_name,learning_rates=lr).minimize(cost)
 
-        init = tf.initializers.global_variables()
+        init = tf.compat.v1.initializers.global_variables()
 
         if len(dict_augmented_image) > 0:
             rotation_degree = dict_augmented_image['rotation_degree']
@@ -132,8 +133,8 @@ class ImageClassification(object):
                 
             generator_train, generator_val, num_train_data, num_val_data = image_generator.generate_from_directory_auto(directory=self.dataset_folder_path, val_ratio=0.2)
 
-        main_graph_saver = tf.train.Saver(base_var_list)
-        output_saver = tf.train.Saver()
+        main_graph_saver = tf.compat.v1.train.Saver(base_var_list)
+        output_saver = tf.compat.v1.train.Saver()
 
         save_directory = os.path.join(os.getcwd(),output_model_path,'trained_model')
         if not os.path.exists(save_directory):
@@ -149,7 +150,7 @@ class ImageClassification(object):
         #    writer.close()
 
         counter_model = 1
-        with tf.Session() as sess:
+        with tf.compat.v1.Session() as sess:
             sess.run(init)
             
             if is_last_checkpoint:
@@ -158,13 +159,13 @@ class ImageClassification(object):
             if use_pretrain:
                 main_graph_saver.restore(sess,path_pretrained)            
             
-            best_val_accuracy = 0.7
+            best_val_accuracy = threshold_best_model
             for i in range(epoch):
-                print('Epoch '+(i)+'/'+str(epoch))
+                print('Epoch '+str(i+1)+'/'+str(epoch))
                 tmp_train_loss = []
                 tmp_train_acc = []
-                for j in range(train_iteration):
-                    #output_graph_model_path = os.path.join(save_directory, model_version+'_output_graph_'+str(counter_model))
+                print("Step Train")
+                for j in range(0,train_iteration):
                     sign = '--------------'
                     x_batch_train , y_batch_train = next(generator_train)
                     feed_dict_train = {self.input_tensor: x_batch_train , self.output_tensor: y_batch_train}
@@ -182,7 +183,8 @@ class ImageClassification(object):
 
                 tmp_val_loss = []
                 tmp_val_acc = []
-                for k in range(validation_iteration):
+                print("Step Validation")
+                for k in range(0,validation_iteration):
                     x_batch_valid , y_batch_valid = next(generator_val)
                     feed_dict_valid = {self.input_tensor: x_batch_valid , self.output_tensor: y_batch_valid}
                     y_validation , val_loss = sess.run([output,cost], feed_dict=feed_dict_valid)
@@ -196,11 +198,9 @@ class ImageClassification(object):
                 avg_val_loss = sum(tmp_val_loss)/(len(tmp_val_loss)+0.0001)
                 avg_val_acc = sum(tmp_val_acc)/(len(tmp_val_acc)+0.0001)
                 
-                print(avg_val_acc)
                 if avg_val_acc > best_val_accuracy:
-                    #main_graph_model_path = os.path.join(save_directory,model_version+'_main_graph')
-                    #main_graph_saver.save(sess=sess,save_path=main_graph_model_path)
-                    output_saver.save(sess=sess,save_path=save_directory)
+                    main_graph_saver.save(sess=sess,save_path=save_directory+'/base_'+str(self.type_architecture))
+                    output_saver.save(sess=sess,save_path=save_directory+'/'+str(self.type_architecture))
                     best_val_accuracy = avg_val_acc
                     sign = 'Found the Best '+str(counter_model)
                     counter_model+=1
@@ -211,3 +211,6 @@ class ImageClassification(object):
                 val_losess.append(avg_val_loss)
 
                 print(msg.format(i, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc , sign))
+        return train_accuracy , train_losess, val_accuracy, val_losess
+
+

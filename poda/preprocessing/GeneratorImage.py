@@ -40,55 +40,58 @@ class GeneratorImage():
             image_data_batch = []
             image_target_batch = []
             for i in range(self.batch_size):
-                number_augmentation = 1
-                image_file = list_path_data[counter_image]
-                if self.color_mode == 'grayscale':
-                    image = cv2.imread(image_file,0)
-                else:
-                    image = cv2.imread(image_file)
-                image = cv2.resize(image, (self.image_size[0], self.image_size[1]))
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                image = image.astype(np.float32)
-                image = image/255.0
+                try:
+                    number_augmentation = 1
+                    image_file = list_path_data[counter_image]
+                    if self.color_mode == 'grayscale':
+                        image = cv2.imread(image_file,0)
+                    else:
+                        image = cv2.imread(image_file)
+                    image = cv2.resize(image, (self.image_size[0], self.image_size[1]))
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    image = image.astype(np.float32)
+                    image = image/255.0
 
-                image_data_batch.append(image)
-                #image_target_batch.append(list_target_data[counter_image])
-                if self.rotation_degree!=None:
-                    number_rotation = int(360/self.rotation_degree)
-                    for j in range(number_rotation):
-                        radian_rotation = self.rotation_degree
-                        image_rotation = self.rotate_image(image, radian_rotation)
-                        radian_rotation += self.rotation_degree
-                        image_data_batch.append(image_rotation)
+                    image_data_batch.append(image)
+                    #image_target_batch.append(list_target_data[counter_image])
+                    if self.rotation_degree!=None:
+                        number_rotation = int(360/self.rotation_degree)
+                        for j in range(number_rotation):
+                            radian_rotation = self.rotation_degree
+                            image_rotation = self.rotate_image(image, radian_rotation)
+                            radian_rotation += self.rotation_degree
+                            image_data_batch.append(image_rotation)
+                            #image_target_batch.append(list_target_data[counter_image])
+                            number_augmentation += 1
+                    
+                    if self.flip_image_horizontal_status==True:
+                        image_flip = self.flip_image_horizontal(image)
+                        image_data_batch.append(image_flip)
                         #image_target_batch.append(list_target_data[counter_image])
                         number_augmentation += 1
-                
-                if self.flip_image_horizontal_status==True:
-                    image_flip = self.flip_image_horizontal(image)
-                    image_data_batch.append(image_flip)
-                    #image_target_batch.append(list_target_data[counter_image])
-                    number_augmentation += 1
 
-                if self.flip_image_vertical_status==True:
-                    image_flip = self.flip_image_vertical(image)
-                    image_data_batch.append(image_flip)
-                    #image_target_batch.append(list_target_data[counter_image])
-                    number_augmentation += 1
+                    if self.flip_image_vertical_status==True:
+                        image_flip = self.flip_image_vertical(image)
+                        image_data_batch.append(image_flip)
+                        #image_target_batch.append(list_target_data[counter_image])
+                        number_augmentation += 1
 
-                if self.zoom_scale!=None:
-                    image_zoom = self.zoom_image(image,self.zoom_scale)
-                    image_data_batch.append(image_zoom)
-                    #image_target_batch.append(list_target_data[counter_image])
-                    number_augmentation += 1
-                
-                for i in range(0,number_augmentation):
-                    tmp_target_batch = np.zeros(number_class+1).astype(np.float32)
-                    tmp_target_batch[list_target_data[counter_image]-1] = 1
-                    image_target_batch.append(tmp_target_batch)
-                
-                counter_image+=1
-                if counter_image >= len(list_path_data):
-                    counter_image = 0
+                    if self.zoom_scale!=None:
+                        image_zoom = self.zoom_image(image,self.zoom_scale)
+                        image_data_batch.append(image_zoom)
+                        #image_target_batch.append(list_target_data[counter_image])
+                        number_augmentation += 1
+                    
+                    for i in range(0,number_augmentation):
+                        tmp_target_batch = np.zeros(number_class+1).astype(np.float32)
+                        tmp_target_batch[list_target_data[counter_image]-1] = 1
+                        image_target_batch.append(tmp_target_batch)
+                    
+                    counter_image+=1
+                    if counter_image >= len(list_path_data):
+                        counter_image = 0
+                except:
+                    print("Failed to open "+str(list_path_data[counter_image]))
 
             image_data_batch = np.array(image_data_batch)            
             image_data_batch = image_data_batch.reshape((self.batch_size*number_augmentation,self.image_size[0],self.image_size[1],self.image_size[2])).astype(np.float32)

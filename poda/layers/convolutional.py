@@ -23,9 +23,9 @@ def avarage_pool_1d(input_tensor, kernel_sizes=(3), stride_sizes=(1), paddings='
     else:
         names = 'avg_pool_1d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -53,9 +53,9 @@ def avarage_pool_2d(input_tensor, kernel_sizes=(3,3), stride_sizes=(1,1), paddin
     else:
         names = 'avg_pool_2d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -83,9 +83,9 @@ def avarage_pool_3d(input_tensor, kernel_sizes=(3,3,3), stride_sizes=(1,1,1), pa
     else:
         names = 'avg_pool_3d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -143,9 +143,9 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     else:
         names = 'conv_1d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -188,9 +188,9 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     else:
         names = 'conv_2d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -234,9 +234,9 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     else:
         names = 'conv_3d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -280,9 +280,9 @@ def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3),
     else:
         names = 'deptwise_conv_2d'
     
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -322,9 +322,9 @@ def max_pool_1d(input_tensor, pool_sizes=(2), stride_sizes=(1), paddings='same',
     else:
         names = 'max_pool_1d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -352,9 +352,9 @@ def max_pool_2d(input_tensor, pool_sizes=(2,2), stride_sizes=(1,1), paddings='sa
     else:
         names = 'max_pool_2d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'
@@ -382,9 +382,9 @@ def max_pool_3d(input_tensor, pool_sizes=(2,2,2), stride_sizes=(1,1,1), paddings
     else:
         names = 'max_pool_3d'
 
-    if paddings=='Valid' or paddings=='valid':
+    if paddings=='Valid' or paddings=='valid' or paddings=='VALID':
         paddings = 'VALID'
-    elif paddings=='Same' or paddings=='same':
+    elif paddings=='Same' or paddings=='same' or paddings=='SAME':
         paddings = 'SAME'
     else:
         paddings = 'SAME'

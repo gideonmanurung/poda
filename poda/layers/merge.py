@@ -57,7 +57,8 @@ def flatten(input_tensor, names=None):
     else:
         names = 'flatten'
         
-    flatten_tensor = tf.layers.flatten(input_tensor)
+    # Insert name future
+    flatten_tensor = tf.contrib.layers.flatten(input_tensor)
     return flatten_tensor
 
 def maximum(input_tensor_1, input_tensor_2, names=None):
