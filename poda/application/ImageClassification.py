@@ -8,7 +8,7 @@ from poda.layers.convolutional import *
 from poda.utils.visualize_training import *
 from poda.transfer_learning.Vgg16_slim import *
 from poda.transfer_learning.Vgg16 import VGG16
-from poda.transfer_learning.InceptionV4 import InceptionV4
+#from poda.transfer_learning.InceptionV4 import InceptionV4
 from poda.preprocessing.GeneratorImage import GeneratorImage as generator
 
 class ImageClassification(object):
@@ -71,7 +71,8 @@ class ImageClassification(object):
             non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
                                                                        num_fully_connected_layer=num_dense_layer,num_hidden_unit=num_hidden_unit,activation_fully_connected=activation_dense,regularizers=regularizer)
         elif self.type_architecture == 'inception_v4':
-            model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
+            model = None
+            #model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
             non_logit, output, base_var_list, full_var_list = None , None , None , None
             ###NEED FIX THIS
             #model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
@@ -136,9 +137,14 @@ class ImageClassification(object):
         main_graph_saver = tf.compat.v1.train.Saver(base_var_list)
         output_saver = tf.compat.v1.train.Saver()
 
-        save_directory = os.path.join(os.getcwd(),output_model_path,'trained_model')
-        if not os.path.exists(save_directory):
-            os.makedirs(save_directory)
+        output_saver_path = os.path.join(os.getcwd(),output_model_path,'full_model')
+        if not os.path.exists(output_saver_path):
+            os.makedirs(output_saver_path)
+
+        main_graph_saver_path = os.path.join(os.getcwd(),output_model_path,'base_model')
+        if not os.path.exists(main_graph_saver_path):
+            os.makedirs(main_graph_saver_path)
+
         msg = "Epoch: {0:>6} loss: {1:>6.3} - acc: {2:>6.3} - val_loss: {3:>6.3} - val_acc: {4:>6.3} - {5}"
         
         train_iteration = int(num_train_data/self.batch_size)
@@ -154,10 +160,10 @@ class ImageClassification(object):
             sess.run(init)
             
             if is_last_checkpoint:
-                output_saver.restore(sess,output_model_path)
+                output_saver.restore(sess,output_saver_path)
 
             if use_pretrain:
-                main_graph_saver.restore(sess,path_pretrained)            
+                main_graph_saver.restore(sess,main_graph_saver_path)            
             
             best_val_accuracy = threshold_best_model
             for i in range(epoch):
@@ -197,10 +203,10 @@ class ImageClassification(object):
                     
                 avg_val_loss = sum(tmp_val_loss)/(len(tmp_val_loss)+0.0001)
                 avg_val_acc = sum(tmp_val_acc)/(len(tmp_val_acc)+0.0001)
-                
+                    
                 if avg_val_acc > best_val_accuracy:
-                    main_graph_saver.save(sess=sess,save_path=save_directory+'/base_'+str(self.type_architecture))
-                    output_saver.save(sess=sess,save_path=save_directory+'/'+str(self.type_architecture))
+                    main_graph_saver.save(sess=sess,save_path=main_graph_saver_path+'/base_'+str(self.type_architecture))
+                    output_saver.save(sess=sess,save_path=output_saver_path+'/'+str(self.type_architecture))
                     best_val_accuracy = avg_val_acc
                     sign = 'Found the Best '+str(counter_model)
                     counter_model+=1

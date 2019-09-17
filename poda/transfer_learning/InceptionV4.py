@@ -7,7 +7,7 @@ from poda.layers.regularizer import *
 from poda.layers.convolutional import *
 
 
-class InceptionResnetV2(object):
+class InceptionV4(object):
     def __init__(self, input_tensor, n_inception_a=4, n_inception_b=7, n_inception_c=3, classes=1000, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None):
         """[summary]
         
@@ -32,7 +32,7 @@ class InceptionResnetV2(object):
         self.scope = scopes        
 
 
-    def conv_block(self, inputs, filters, kernel_size, strides=(2,2), padding='VALID',  dropout_rate=0.2, activation=None, name=None, use_batch_norm=True):
+    def conv_block(self, inputs, filters, kernel_size, strides=(2,2), padding='VALID', dropout_rate=0.2, activation=None, name=None, use_batch_norm=True):
         """[summary]
         
         Arguments:
@@ -75,7 +75,8 @@ class InceptionResnetV2(object):
             with tf.compat.v1.variable_scope('Branch_1'):
                 conv_4 = self.conv_block(inputs=conv_3, filters=96, kernel_size=(3,3), padding='VALID', strides=(2,2), use_batch_norm=batch_normalization, name='0b_3x3')
 
-            concat_1 = concatenate(input_tensor_1=conv_4, input_tensor_2=max_pool_1, axis=-1, names='conv_3x3_maxpool_3x3')
+            with tf.compat.v1.variable_scope('Concatenate_1'):
+                concat_1 = concatenate(list_tensor=[max_pool_1,conv_4], axis=-1, names='conv_3x3_maxpool_3x3')
 
             with tf.compat.v1.variable_scope('Branch_3'):
                 conv_5 = self.conv_block(inputs=concat_1, filters=64, kernel_size=(1,1), padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0a_1x1')
@@ -86,14 +87,16 @@ class InceptionResnetV2(object):
                 conv_9 = self.conv_block(inputs=conv_8, filters=64, kernel_size=(1,7), padding='SAME', strides=(1, 1), use_batch_norm=batch_normalization, name='2b_1x7')
                 conv_10 = self.conv_block(inputs=conv_9, filters=96, kernel_size=(3,3), padding='VALID', strides=(1, 1), use_batch_norm=batch_normalization, name='3b_3x3')
             
-            concat_2 = concatenate(input_tensor_1=conv_6, input_tensor_2=conv_10, axis=-1, names='conv_3x3_conv_3x3')
+            with tf.compat.v1.variable_scope('Concatenate_2'):
+                concat_2 = concatenate(list_tensor=[conv_6,conv_10], axis=-1, names='conv_3x3_conv_3x3')
 
             with tf.compat.v1.variable_scope('Branch_5'):
                 conv_11 = self.conv_block(inputs=concat_2, filters=192, kernel_size=(3,3), padding='VALID', strides=(2,2), use_batch_norm=batch_normalization, name='0a_3x3')
             with tf.compat.v1.variable_scope('Branch_6'):
                 max_pool_2 = max_pool_2d(inputs=concat_2, pool_sizes=(3,3), stride_sizes=(2,2), paddings='VALID', names='0b_3x3')
-                
-            concat_3 = concatenate(input_tensor_1=max_pool_2, input_tensor_2=conv_11, axis=-1, names='maxpool_3x3_conv_3x3')
+            
+            with tf.compat.v1.variable_scope('Concatenate_3'):
+                concat_3 = concatenate(list_tensor=[conv_11,max_pool_2], axis=-1, names='conv_3x3_maxpool_3x3')
         return concat_3
     
     # Inception A
@@ -122,7 +125,8 @@ class InceptionResnetV2(object):
                 conv_7 = self.conv_block(inputs=conv_6, filters=96, kernel_size=(3,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1d_3x3')
                 conv_8 = self.conv_block(inputs=conv_7, filters=96, kernel_size=(3,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='2d_3x3')
 
-            concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_5,conv_8], axis=-1, names=None)
+            with tf.compat.v1.variable_scope('Concatenate_1'):
+                concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_5,conv_8], axis=-1, names=None)
         return concat_1    
     
     # Reduction A
@@ -143,11 +147,11 @@ class InceptionResnetV2(object):
             with tf.compat.v1.variable_scope('Branch_1'):
                 conv_1 = self.conv_block(inputs=input_tensor, filters=384, kernel_size=(3,3) , strides=(2,2), padding='VALID', use_batch_norm=batch_normalization, name='0b_3x3')
             with tf.compat.v1.variable_scope('Branch_2'):
-                conv_2 = self.conv_block(inputs=input_tensor, filters=256, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0c_1x1')
-                conv_3 = self.conv_block(inputs=conv_2, filters=256, kernel_size=(3,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1c_3x3')
-                conv_4 = self.conv_block(inputs=conv_3, filters=384, kernel_size=(3,3) , padding='VALID', strides=(2,2), use_batch_norm=batch_normalization, name='0d_1x1')
-
-            concat_1 = concatenate(list_tensor=[max_pool_1,conv_1,conv_4], axis=-1, names=None)
+                conv_2 = self.conv_block(inputs=input_tensor, filters=192, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0c_1x1')
+                conv_3 = self.conv_block(inputs=conv_2, filters=224, kernel_size=(3,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1c_3x3')
+                conv_4 = self.conv_block(inputs=conv_3, filters=256, kernel_size=(3,3) , padding='VALID', strides=(2,2), use_batch_norm=batch_normalization, name='0d_1x1')
+            with tf.compat.v1.variable_scope('Concatenate_1'):
+                concat_1 = concatenate(list_tensor=[max_pool_1,conv_1,conv_4], axis=-1, names=None)
         return concat_1
     
     
@@ -171,7 +175,7 @@ class InceptionResnetV2(object):
                 conv_2 = self.conv_block(inputs=input_tensor, filters=384, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0b_1x1')
             with tf.compat.v1.variable_scope('Branch_2'):
                 conv_3 = self.conv_block(inputs=input_tensor, filters=192, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0c_1x1')
-                conv_4 = self.conv_block(inputs=conv_3, filters=224, kernel_size=(1,7) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1c_1x7')
+                conv_4 = self.conv_block(inputs=conv_3, filters=224, kernel_size=(7,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1c_7x1')
                 conv_5 = self.conv_block(inputs=conv_4, filters=256, kernel_size=(1,7) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='2c_1x7')
             with tf.compat.v1.variable_scope('Branch_3'):
                 conv_6 = self.conv_block(inputs=input_tensor, filters=192, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0d_1x1')
@@ -179,8 +183,8 @@ class InceptionResnetV2(object):
                 conv_8 = self.conv_block(inputs=conv_7, filters=224, kernel_size=(7,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='2d_7x1')
                 conv_9 = self.conv_block(inputs=conv_8, filters=224, kernel_size=(1,7) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='3d_1x7')
                 conv_10 = self.conv_block(inputs=conv_9, filters=256, kernel_size=(7,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='4d_7x1')
-
-            concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_5,conv_10], axis=-1, names=None)
+            with tf.compat.v1.variable_scope('Concatenate_1'):
+                concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_5,conv_10], axis=-1, names=None)
         return concat_1
 
     # Reduction B
@@ -199,7 +203,7 @@ class InceptionResnetV2(object):
             with tf.compat.v1.variable_scope('Branch_0'):
                 max_pool_1 = max_pool_2d(input_tensor=input_tensor, pool_sizes=(3,3), stride_sizes=(2,2), paddings='VALID', names='0a_3x3')
             with tf.compat.v1.variable_scope('Branch_1'):
-                conv_1 = self.conv_block(inputs=input_tensor, filters=192, kernel_size=(1,1) , strides=(1,1), padding='SAME', use_batch_norm=batch_normalization, name='0b_1x1')
+                conv_1 = self.conv_block(inputs=input_tensor, filters=256, kernel_size=(1,1) , strides=(1,1), padding='SAME', use_batch_norm=batch_normalization, name='0b_1x1')
                 conv_2 = self.conv_block(inputs=conv_1, filters=192, kernel_size=(3,3) , strides=(2,2), padding='VALID', use_batch_norm=batch_normalization, name='0b_1x1')
             with tf.compat.v1.variable_scope('Branch_2'):
                 conv_3 = self.conv_block(inputs=input_tensor, filters=256, kernel_size=(1,1) , strides=(1,1), padding='SAME', use_batch_norm=batch_normalization, name='0c_1x1')
@@ -229,7 +233,7 @@ class InceptionResnetV2(object):
             with tf.compat.v1.variable_scope('Branch_1'):
                 conv_2 = self.conv_block(inputs=input_tensor, filters=256, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0b_1x1')
             with tf.compat.v1.variable_scope('Branch_2'):
-                conv_3 = self.conv_block(inputs=input_tensor, filters=384, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0c_1x1')
+                conv_3 = self.conv_block(inputs=inpuKaut_tensor, filters=384, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='0c_1x1')
                 with tf.compat.v1.variable_scope('Branch_21'):
                     conv_4 = self.conv_block(inputs=conv_3, filters=256, kernel_size=(1,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1c1_1x3')
                 with tf.compat.v1.variable_scope('Branch_22'):
@@ -242,8 +246,8 @@ class InceptionResnetV2(object):
                     conv_9 = self.conv_block(inputs=conv_8, filters=256, kernel_size=(3,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='3d1_3x1')
                 with tf.compat.v1.variable_scope('Branch_32'):
                     conv_10 = self.conv_block(inputs=conv_8, filters=256, kernel_size=(1,3) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='3d2_1x3')
-
-            concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_4,conv_5,conv_9,conv_10], axis=-1, names=None)
+            with tf.compat.v1.variable_scope('Concatenate_1'):
+                concat_1 = concatenate(list_tensor=[conv_1,conv_2,conv_4,conv_5,conv_9,conv_10], axis=-1, names=None)
         return concat_1
 
     # Create Model

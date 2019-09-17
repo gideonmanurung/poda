@@ -15,6 +15,7 @@ setup(
     author='gideonmanurung',  # Optional
     author_email='gideonmanurung3@gmail.com', #optional
     packages=["poda",
+              "poda.application",
               "poda.object_detector",
               "poda.segmentation",
               "poda.transfer_learning", 
