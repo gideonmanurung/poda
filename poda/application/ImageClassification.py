@@ -42,41 +42,61 @@ class ImageClassification(object):
         self.output_tensor = tf.placeholder(tf.float32, (self.batch_size, self.classes),name='output_tensor')
     
     def create_model(self, dict_architecture):
-        if len(dict_architecture) > 0:
-            num_block = dict_architecture['num_blocks']
-            batch_normalization = dict_architecture['batch_normalizations']
-            num_depthwise_layer = dict_architecture['num_depthwise_layers']
-            num_dense_layer = dict_architecture['num_dense_layers']
-            num_hidden_unit = dict_architecture['num_hidden_units']
-            activation_dense = dict_architecture['activation_denses']
-            dropout_rate = dict_architecture['dropout_rates']
-            regularizer = dict_architecture['regularizers']
-            scope = dict_architecture['scopes']
-        else:
-            num_block = 4
-            batch_normalization = True
-            num_depthwise_layer = 0
-            num_dense_layer = 1
-            num_hidden_unit = 512
-            activation_dense = 'relu'
-            dropout_rate = None
-            regularizer = None
-            scope = None
+        if self.type_architecture in "vgg_16_slim":
+            if len(dict_architecture) > 0:
+                num_block = dict_architecture['num_blocks']
+                batch_normalization = dict_architecture['batch_normalizations']
+                num_depthwise_layer = dict_architecture['num_depthwise_layers']
+                num_dense_layer = dict_architecture['num_dense_layers']
+                num_hidden_unit = dict_architecture['num_hidden_units']
+                activation_dense = dict_architecture['activation_denses']
+                dropout_rate = dict_architecture['dropout_rates']
+                regularizer = dict_architecture['regularizers']
+                scope = dict_architecture['scopes']
+            else:
+                num_block = 4
+                batch_normalization = True
+                num_depthwise_layer = 0
+                num_dense_layer = 1
+                num_hidden_unit = 512
+                activation_dense = 'relu'
+                dropout_rate = None
+                regularizer = None
+                scope = None
 
-        if self.type_architecture == 'vgg_16':
-            model = VGG16(input_tensor=self.input_tensor, num_blocks=num_block, classes=self.classes, batch_normalizations=batch_normalization, num_depthwise_layers=num_depthwise_layer,
-                          num_dense_layers=num_dense_layer, num_hidden_units=num_hidden_unit, activation_denses=activation_dense, dropout_rates=dropout_rate, regularizers=regularizer, scopes=scope)
-            non_logit, output, base_var_list, full_var_list = model.create_model()
-        elif self.type_architecture == 'vgg_16_slim':
-            non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
+            if self.type_architecture == 'vgg_16':
+                model = VGG16(input_tensor=self.input_tensor, num_blocks=num_block, classes=self.classes, batch_normalizations=batch_normalization, num_depthwise_layers=num_depthwise_layer,
+                            num_dense_layers=num_dense_layer, num_hidden_units=num_hidden_unit, activation_denses=activation_dense, dropout_rates=dropout_rate, regularizers=regularizer, scopes=scope)
+                non_logit, output, base_var_list, full_var_list = model.create_model()
+            else:
+                non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
                                                                        num_fully_connected_layer=num_dense_layer,num_hidden_unit=num_hidden_unit,activation_fully_connected=activation_dense,regularizers=regularizer)
-        elif self.type_architecture == 'inception_v4':
-            model = None
-            #model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
-            non_logit, output, base_var_list, full_var_list = None , None , None , None
-            ###NEED FIX THIS
-            #model = InceptionV4(input_tensor=self.input_tensor, n_inception_a, n_inception_b, n_inception_c, classes=self.classes, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None)
-            #non_logit, output, base_var_list, full_var_list = model.create_model()
+        elif self.type_architecture in 'inception_v4_slim':
+            if len(dict_architecture) > 0:
+                inception_a = dict_architecture['n_inception_a']
+                inception_b = dict_architecture['n_inception_b']
+                inception_c = dict_architecture['n_inception_c']
+                batch_normalization = dict_architecture['batch_normalizations']
+                dropout_rate = dict_architecture['dropout_rates']
+                regularizer = dict_architecture['regularizers']
+                scope = dict_architecture['scopes']
+            else:
+                inception_a = 4
+                inception_b = 7
+                inception_c = 3
+                batch_normalization = True
+                dropout_rate = None
+                regularizer = None
+                scope = None
+
+            if self.type_architecture == 'incetion_v4':
+                model = InceptionV4(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
+                                    dropout_rates=dropout_rate, regularizers=regularizer, scopes=scope)
+                non_logit, output, base_var_list, full_var_list = model.create_model()
+                
+            else:
+                non_logit, output, base_var_list, full_var_list = inception_v4(inputs=self.input_tensor,  num_classes=self.classes,final_endpoint='Mixed_7d',is_training=batch_normalization,dropout_keep_prob=dropout_rate,
+                                                                                num_depthwise_layer=None,regularizers=regularizer)
 
         return non_logit, output, base_var_list, full_var_list
 
@@ -98,7 +118,7 @@ class ImageClassification(object):
         with tf.control_dependencies(update_ops):
             optimizer = optimizers(optimizers_names=optimizers_name,learning_rates=lr).minimize(cost)
 
-        init = tf.compat.v1.initializers.global_variables()
+        init = tf.compat.v1.global_variables_initializer()
 
         if len(dict_augmented_image) > 0:
             rotation_degree = dict_augmented_image['rotation_degree']
@@ -205,8 +225,10 @@ class ImageClassification(object):
                 avg_val_acc = sum(tmp_val_acc)/(len(tmp_val_acc)+0.0001)
                     
                 if avg_val_acc > best_val_accuracy:
-                    main_graph_saver.save(sess=sess,save_path=main_graph_saver_path+'/base_'+str(self.type_architecture))
-                    output_saver.save(sess=sess,save_path=output_saver_path+'/'+str(self.type_architecture))
+                    base_model_path = os.path.join(main_graph_saver_path,"base_"+str(self.type_architecture))
+                    full_model_path = os.path.join(output_saver_path,str(self.type_architecture))
+                    main_graph_saver.save(sess=sess,save_path=base_model_path)
+                    output_saver.save(sess=sess,save_path=full_model_path)
                     best_val_accuracy = avg_val_acc
                     sign = 'Found the Best '+str(counter_model)
                     counter_model+=1

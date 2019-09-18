@@ -8,7 +8,7 @@ from poda.layers.convolutional import *
 
 
 class InceptionV4(object):
-    def __init__(self, input_tensor, n_inception_a=4, n_inception_b=7, n_inception_c=3, classes=1000, batch_normalizations = True, activation_denses='relu', dropout_rates=None, regularizers=None, scopes=None):
+    def __init__(self, input_tensor, n_inception_a=4, n_inception_b=7, n_inception_c=3, classes=1000, batch_normalizations = True, dropout_rates=None, regularizers=None, scopes=None):
         """[summary]
         
         Arguments:
@@ -26,7 +26,6 @@ class InceptionV4(object):
         self.n_inception_b = n_inception_b
         self.n_inception_c = n_inception_c
         self.batch_normalizations = batch_normalizations
-        self.activation_dense = activation_denses
         self.dropout_rate = dropout_rates
         self.regularizer = regularizers
         self.scope = scopes        
@@ -55,7 +54,7 @@ class InceptionV4(object):
         return conv
 
     # Stem Block
-    def stem_block(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def stem_block(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -66,7 +65,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {[type]} -- [description] (default: {None})
         """
-        with tf.compat.v1.variable_scope(scope, 'StemBlock', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'StemBlock', [input_tensor], reuse=reuse):
             conv_1 = self.conv_block(inputs=input_tensor, filters=32, kernel_size=(3,3), padding='VALID', strides=(2, 2), use_batch_norm=batch_normalization, name='0_3x3')
             conv_2 = self.conv_block(inputs=conv_1, filters=32, kernel_size=(3,3), padding='VALID', strides=(1,1), use_batch_norm=batch_normalization, name='0_3x3')
             conv_3 = self.conv_block(inputs=conv_2, filters=64, kernel_size=(3,3), padding='SAME', strides=(1, 1), use_batch_norm=batch_normalization, name='0_3x3')
@@ -100,7 +99,7 @@ class InceptionV4(object):
         return concat_3
     
     # Inception A
-    def inception_a(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def inception_a(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -111,7 +110,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {bool} -- [description] (default: {True})
         """
-        with tf.compat.v1.variable_scope(scope, 'BlockInceptionA', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'BlockInceptionA', [input_tensor], reuse=reuse):
             with tf.compat.v1.variable_scope('Branch_0'):
                 avg_pool_1 = avarage_pool_2d(input_tensor=input_tensor, kernel_sizes=(3,3), padding='SAME', stride_sizes=(1,1), names='0a_3x3')
                 conv_1 = self.conv_block(inputs=avg_pool_1, filters=96, kernel_size=(1,1), padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1a_1x1')
@@ -130,7 +129,7 @@ class InceptionV4(object):
         return concat_1    
     
     # Reduction A
-    def reduction_a(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def reduction_a(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -141,7 +140,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {[type]} -- [description] (default: {None})
         """
-        with tf.compat.v1.variable_scope(scope, 'BlockReductionA', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'BlockReductionA', [input_tensor], reuse=reuse):
             with tf.compat.v1.variable_scope('Branch_0'):
                 max_pool_1 = max_pool_2d(input_tensor=input_tensor, pool_sizes=(3,3), stride_sizes=(2,2), paddings='VALID', names='0a_3x3')
             with tf.compat.v1.variable_scope('Branch_1'):
@@ -156,7 +155,7 @@ class InceptionV4(object):
     
     
     # Inception B
-    def inception_b(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def inception_b(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -167,7 +166,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {[type]} -- [description] (default: {None})
         """
-        with tf.compat.v1.variable_scope(scope, 'BlockInceptionB', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'BlockInceptionB', [input_tensor], reuse=reuse):
             with tf.compat.v1.variable_scope('Branch_0'):
                 avg_pool_1 = avarage_pool_2d(input_tensor=input_tensor, kernel_sizes=(3,3), padding='SAME', stride_sizes=(1,1), names='0a_3x3')
                 conv_1 = self.conv_block(inputs=avg_pool_1, filters=128, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1a_1x1')
@@ -188,7 +187,7 @@ class InceptionV4(object):
         return concat_1
 
     # Reduction B
-    def reduction_b(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def reduction_b(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -199,7 +198,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {[type]} -- [description] (default: {None})
         """
-        with tf.compat.v1.variable_scope(scope, 'BlockReductionB', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'BlockReductionB', [input_tensor], reuse=reuse):
             with tf.compat.v1.variable_scope('Branch_0'):
                 max_pool_1 = max_pool_2d(input_tensor=input_tensor, pool_sizes=(3,3), stride_sizes=(2,2), paddings='VALID', names='0a_3x3')
             with tf.compat.v1.variable_scope('Branch_1'):
@@ -215,7 +214,7 @@ class InceptionV4(object):
         return concat_1
 
     # Inception C
-    def inception_c(self, input_tensor, batch_normalization=True, scope=None, reuse=True):
+    def inception_c(self, input_tensor, batch_normalization=True, reuse=True):
         """[summary]
         
         Arguments:
@@ -226,7 +225,7 @@ class InceptionV4(object):
             scope {[type]} -- [description] (default: {None})
             reuse {[type]} -- [description] (default: {None})
         """
-        with tf.compat.v1.variable_scope(scope, 'BlockInceptionC', [input_tensor], reuse=reuse):
+        with tf.compat.v1.variable_scope(self.scope, 'BlockInceptionC', [input_tensor], reuse=reuse):
             with tf.compat.v1.variable_scope('Branch_0'):
                 avg_pool_1 = avarage_pool_2d(input_tensor=input_tensor, kernel_sizes=(3,3), padding='SAME', stride_sizes=(1,1), names='0a_3x3')
                 conv_1 = self.conv_block(inputs=avg_pool_1, filters=256, kernel_size=(1,1) , padding='SAME', strides=(1,1), use_batch_norm=batch_normalization, name='1a_1x1')
@@ -297,13 +296,14 @@ class InceptionV4(object):
 
             inception_v4 =  dropout(input_tensor=inception_v4, names='output', dropout_rates=self.dropout_rate)
 
+            full_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+
             non_logit = dense(input_tensor=inception_v4, hidden_units=self.classes, names='output')
             
             if self.classes > 2:
                 output = softmax(input_tensor=non_logit, names='output')
             else:
                 output = sigmoid(input_tensor=non_logit, names='output')
-
-            full_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+            
         return non_logit, output, base_var_list, full_var_list
 

@@ -252,51 +252,40 @@ def inception_v4_base(inputs, final_endpoint='Mixed_7d', scope=None):
   raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 
-def build_top_layer_model(base_layer,num_depthwise_layer=None,
-                          num_fully_connected_layer=1,num_hidden_unit=512,
-                          activation_fully_connected='relu',dropout_keep_prob=None,regularizers=None,num_classes=1000):
+def build_top_layer_model(base_layer,num_depthwise_layer=None,,dropout_keep_prob=None,regularizers=None,num_classes=1000):
     previous_layer = base_layer
     if num_depthwise_layer!=None:
-        num_depthwise_layer = num_depthwise_layer * 3
+        num_depthwise_layer = num_depthwise_layer
         for i in range(num_depthwise_layer):
-            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=base_layer.shape[3], 
-                                                      kernel_size=(3,3), stride_size=(2,2), padding='same',
-                                                      activation_function='relu',name='depthwise_conv2d_'+str(i))
+            depth_wise_net = depthwise_convolution_2d(input_tensor=previous_layer,number_filters=1, 
+                                                      kernel_sizes=(3,3), stride_sizes=(2,2), paddings='same',
+                                                      activations='relu',names=str(i))
             previous_layer = depth_wise_net
     else:
         depth_wise_net = previous_layer
 
     flatten_layer = flatten(input_tensor=depth_wise_net)
 
-    if num_fully_connected_layer !=None:
-        for j in range(num_fully_connected_layer):
-            fully_connected_net = fully_connected(input_tensor=flatten_layer,hidden_unit=num_hidden_unit,
-                                                  activation_function=activation_fully_connected,
-                                                  dropout_layer=dropout_keep_prob,regularizers=regularizers,
-                                                  scale=dropout_keep_prob,name='fully_connected_'+str(j))
-            flatten_layer = fully_connected_net
-    else:
-        flatten_layer = flatten_layer
+    flatten_layer = dropout(input_tensor=flatten_layer,names='output',dropout_rates=dropout_keep_prob)
 
-    flatten_layer = dropout(input_tensor=flatten_layer,dropout_rates=0.6)
+    full_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
 
-    non_logit = fully_connected(input_tensor=flatten_layer,hidden_unit=num_classes,activation_function=None)
+    non_logit = dense(input_tensor=flatten_layer,hidden_units=num_classes,activations=None)
     if num_classes > 2:
-        output = softmax(input_tensor=non_logit)
+        output = softmax(input_tensor=non_logit, names='output')
     else:
-        output = sigmoid(input_tensor=non_logit)
-    return non_logit, output
+        output = sigmoid(input_tensor=non_logit, names='output')
+    return non_logit, output, full_var_list
 
 
 def inception_v4(inputs,  num_classes=1000, 
                  final_endpoint='Mixed_7d',
                  is_training=True,
-                 dropout_keep_prob=0.8,
+                 dropout_keep_prob=0.2,
                  reuse=None,
                  scope='InceptionV4',
                  create_aux_logits=True,
-                 num_depthwise_layer=None,num_fully_connected_layer=None,
-                 num_hidden_unit=None,activation_fully_connected=None,
+                 num_depthwise_layer=None,
                  regularizers=None):
   """Creates the Inception V4 model.
   Args:
@@ -322,9 +311,7 @@ def inception_v4(inputs,  num_classes=1000,
                         is_training=is_training):
       net, end_points = inception_v4_base(inputs, final_endpoint=final_endpoint, scope=scope)
   
-  var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-  non_logit , top_layer = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,
-                                                    num_fully_connected_layer=num_fully_connected_layer,
-                                                    num_hidden_unit=num_hidden_unit,
-                                                    activation_fully_connected=activation_fully_connected,regularizers=regularizers)
-  return var_list , non_logit , top_layer
+  base_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+  non_logit , output , full_var_list = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,regularizers=regularizers)
+  
+  return non_logit, output, base_var_list, full_var_list
