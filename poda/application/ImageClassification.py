@@ -8,7 +8,8 @@ from poda.layers.convolutional import *
 from poda.utils.visualize_training import *
 from poda.transfer_learning.Vgg16_slim import *
 from poda.transfer_learning.Vgg16 import VGG16
-#from poda.transfer_learning.InceptionV4 import InceptionV4
+from poda.transfer_learning.InceptionV4_slim import *
+from poda.transfer_learning.InceptionV4 import InceptionV4
 from poda.preprocessing.GeneratorImage import GeneratorImage as generator
 
 class ImageClassification(object):
@@ -38,8 +39,8 @@ class ImageClassification(object):
         self.custom_architecture = custom_architecture
         self.dict_var_architecture = dict_var_architecture
 
-        self.input_tensor = tf.placeholder(tf.float32, shape=(self.batch_size, self.input_height, self.input_width, self.input_channel), name='input_tensor')
-        self.output_tensor = tf.placeholder(tf.float32, (self.batch_size, self.classes),name='output_tensor')
+        self.input_tensor = tf.compat.v1.placeholder(tf.float32, shape=(self.batch_size, self.input_height, self.input_width, self.input_channel), name='input_tensor')
+        self.output_tensor = tf.compat.v1.placeholder(tf.float32, (self.batch_size, self.classes),name='output_tensor')
     
     def create_model(self, dict_architecture):
         if self.type_architecture in "vgg_16_slim":
@@ -89,11 +90,13 @@ class ImageClassification(object):
                 regularizer = None
                 scope = None
 
-            if self.type_architecture == 'incetion_v4':
+            if self.type_architecture == 'inception_v4':
                 model = InceptionV4(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
                                     dropout_rates=dropout_rate, regularizers=regularizer, scopes=scope)
-                non_logit, output, base_var_list, full_var_list = model.create_model()
-                
+                non_logit, output, base_var_list, full_var_list = model.create_model()    
+            elif self.type_architecture == 'inception_resnet_v2':
+                model = InceptionResnetV2(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
+                                    dropout_rates=None, regularizers=None, scopes=None)
             else:
                 non_logit, output, base_var_list, full_var_list = inception_v4(inputs=self.input_tensor,  num_classes=self.classes,final_endpoint='Mixed_7d',is_training=batch_normalization,dropout_keep_prob=dropout_rate,
                                                                                 num_depthwise_layer=None,regularizers=regularizer)
@@ -114,7 +117,7 @@ class ImageClassification(object):
         accuracy = calculate_accuracy_classification(output,self.output_tensor)
 
         cost = calculate_loss(input_tensor=non_logit, label=self.output_tensor, type_loss_function='softmax_crossentropy_mean')
-        update_ops = tf.compat.v1.get_collection(tf.GraphKeys.UPDATE_OPS)
+        update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             optimizer = optimizers(optimizers_names=optimizers_name,learning_rates=lr).minimize(cost)
 
@@ -180,10 +183,14 @@ class ImageClassification(object):
             sess.run(init)
             
             if is_last_checkpoint:
-                output_saver.restore(sess,output_saver_path)
+                loader_output = tf.compat.v1.train.import_meta_graph(output_saver_path + '.meta')
+                loader_output.restore(sess, output_saver_path)
+                #output_saver.restore(sess,output_saver_path)
 
             if use_pretrain:
-                main_graph_saver.restore(sess,main_graph_saver_path)            
+                loader_main_graph = tf.compat.v1.train.import_meta_graph(main_graph_saver_path + '.meta')
+                loader_main_graph.restore(sess, main_graph_saver_path)
+                #main_graph_saver.restore(sess,main_graph_saver_path)            
             
             best_val_accuracy = threshold_best_model
             for i in range(epoch):

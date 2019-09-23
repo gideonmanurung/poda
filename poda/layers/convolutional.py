@@ -60,7 +60,7 @@ def avarage_pool_2d(input_tensor, kernel_sizes=(3,3), stride_sizes=(1,1), paddin
     else:
         paddings = 'SAME'
 
-    layer = tf.nn.avg_pool(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
+    layer = tf.nn.avg_pool2d(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
     return layer
 
 def avarage_pool_3d(input_tensor, kernel_sizes=(3,3,3), stride_sizes=(1,1,1), paddings='same', names=None):
@@ -107,20 +107,20 @@ def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon 
     """
     scale = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]))
     beta = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]))
-    pop_mean = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]), trainable=False)
-    pop_var = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]), trainable=False)
+    pop_mean = tf.Variable(tf.zeros(input_tensor.get_shape().as_list()[-3:]), trainable=False)
+    pop_var = tf.Variable(tf.ones(input_tensor.get_shape().as_list()[-3:]), trainable=False)
 
     if is_trainable:
         batch_mean, batch_var = tf.nn.moments(input_tensor,[0])
-        train_mean = tf.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
-        train_var = tf.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
+        train_mean = tf.compat.v1.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
+        train_var = tf.compat.v1.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
 
         with tf.control_dependencies([train_mean, train_var]):
             return tf.nn.batch_normalization(input_tensor, batch_mean, batch_var, beta, scale, epsilon)
     else:
         return tf.nn.batch_normalization(input_tensor, pop_mean, pop_var, beta, scale, epsilon)
 
-def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
+def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[summary]
     
     Arguments:
@@ -132,7 +132,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
         stride_sizes {tuple} -- [Size of striding of kernel] (default: {(1,1)})
         paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
         activation {str} -- [Type of activation function in layer] (default: {'relu'})
-        dropout_layers {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
+        dropout_rates {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
         names {[str]} -- [Name of the layer] (default: {None})
     
     Returns:
@@ -159,13 +159,18 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     else:
         layer = layer
 
-    if dropout_layers!=None:
-        layer = dropout(input_tensor=layer, names=names)
+    if batch_normalizations:
+        layer = batch_normalization(input_tensor=layer, is_trainable=batch_normalizations)
+    else:
+        layer = layer
+
+    if dropout_rates!=None:
+        layer = dropout(input_tensor=layer, dropout_rates=dropout_rates, names=names)
     else:
         layer = layer
     return layer
 
-def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
+def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[This function creates a convolution kernel that is convolved (actually cross-correlated) with the layer input to produce a tensor of outputs]
     
     Arguments:
@@ -205,13 +210,18 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     else:
         layer = layer
 
-    if dropout_layers!=None:
-        layer = dropout(input_tensor=layer, names=names)
+    if batch_normalizations:
+        layer = batch_normalization(input_tensor=layer, is_trainable=batch_normalizations)
+    else:
+        layer = layer
+
+    if dropout_rates!=None:
+        layer = dropout(input_tensor=layer, dropout_rates=dropout_rates, names=names)
     else:
         layer = layer
     return layer
 
-def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
+def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[summary]
     
     Arguments:
@@ -223,7 +233,7 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
         stride_sizes {tuple} -- [description] (default: {(1,1)})
         paddings {str} -- [Indicating the type of padding algorithm to use] (default: {'same'})
         activations {str} -- [Type of activation function in layer] (default: {'relu'})
-        dropout_layers {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
+        dropout_rates {[type]} -- [Value of dropout rate and determine to use dropout or not] (default: {None})
         names {[type]} -- [Name of the layer] (default: {None})
 
     Returns:
@@ -250,14 +260,19 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     else:
         layer = layer
     
-    if dropout_layers!=None:
-        layer = dropout(input_tensor=layer, names=names)
+    if batch_normalizations:
+        layer = batch_normalization(input_tensor=layer, is_trainable=batch_normalizations)
+    else:
+        layer = layer
+
+    if dropout_rates!=None:
+        layer = dropout(input_tensor=layer, dropout_rates=dropout_rates, names=names)
     else:
         layer = layer
 
     return layer
 
-def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', dropout_layers=None, names=None):
+def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3), stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[Function for adding depthwise convolution 2D layer]
     
     Arguments:
@@ -296,8 +311,13 @@ def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3),
     else:
         layer = layer
 
-    if dropout_layers!=None:
-        layer = dropout(input_tensor=layer, names=names)
+    if batch_normalizations:
+        layer = batch_normalization(input_tensor=layer, is_trainable=batch_normalizations)
+    else:
+        layer = layer
+
+    if dropout_rates!=None:
+        layer = dropout(input_tensor=layer, dropout_rates=dropout_rates, names=names)
     else:
         layer = layer
     return layer

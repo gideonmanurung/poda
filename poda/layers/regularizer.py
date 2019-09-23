@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def dropout(input_tensor, names, dropout_rates=0.2):
+def dropout(input_tensor, names, dropout_rates=None):
     """[Create a dropout function in a layer]
     
     Arguments:
@@ -21,7 +21,6 @@ def dropout(input_tensor, names, dropout_rates=0.2):
     if dropout_rates==None:
         dropout_rates = 0.2
 
-    dropout_rates = 1 - dropout_rates
     return tf.nn.dropout(x=input_tensor, rate=dropout_rates, noise_shape=None,
                             seed=None,
                             name='dropout_'+names)

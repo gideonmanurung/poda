@@ -252,7 +252,7 @@ def inception_v4_base(inputs, final_endpoint='Mixed_7d', scope=None):
   raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 
-def build_top_layer_model(base_layer,num_depthwise_layer=None,,dropout_keep_prob=None,regularizers=None,num_classes=1000):
+def build_top_layer_model(base_layer,num_depthwise_layer=None,dropout_keep_prob=None,regularizers=None,num_classes=1000):
     previous_layer = base_layer
     if num_depthwise_layer!=None:
         num_depthwise_layer = num_depthwise_layer
@@ -264,9 +264,9 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,,dropout_keep_prob
     else:
         depth_wise_net = previous_layer
 
-    flatten_layer = flatten(input_tensor=depth_wise_net)
-
     flatten_layer = dropout(input_tensor=flatten_layer,names='output',dropout_rates=dropout_keep_prob)
+
+    flatten_layer = flatten(input_tensor=depth_wise_net)
 
     full_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
 
