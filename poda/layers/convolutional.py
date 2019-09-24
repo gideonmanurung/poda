@@ -93,7 +93,7 @@ def avarage_pool_3d(input_tensor, kernel_sizes=(3,3,3), stride_sizes=(1,1,1), pa
     layer = tf.nn.avg_pool3d(value=input_tensor,ksize=kernel_sizes,strides=stride_sizes,padding=paddings,data_format='NHWC',name=names)
     return layer
 
-def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon = 1e-3):
+def batch_normalization(input_tensor, is_trainable=True):
     """[summary]
     
     Arguments:
@@ -105,20 +105,7 @@ def batch_normalization(input_tensor, is_trainable=True, decay = 0.999, epsilon 
     Returns:
         [Tensor] -- [A trainable tensor]
     """
-    scale = tf.Variable(tf.ones([input_tensor.get_shape()[-1]]))
-    beta = tf.Variable(tf.zeros([input_tensor.get_shape()[-1]]))
-    pop_mean = tf.Variable(tf.zeros(input_tensor.get_shape().as_list()[-3:]), trainable=False)
-    pop_var = tf.Variable(tf.ones(input_tensor.get_shape().as_list()[-3:]), trainable=False)
-
-    if is_trainable:
-        batch_mean, batch_var = tf.nn.moments(input_tensor,[0])
-        train_mean = tf.compat.v1.assign(pop_mean, pop_mean * decay + batch_mean * (1 - decay))
-        train_var = tf.compat.v1.assign(pop_var, pop_var * decay + batch_var * (1 - decay))
-
-        with tf.control_dependencies([train_mean, train_var]):
-            return tf.nn.batch_normalization(input_tensor, batch_mean, batch_var, beta, scale, epsilon)
-    else:
-        return tf.nn.batch_normalization(input_tensor, pop_mean, pop_var, beta, scale, epsilon)
+    return tf.compat.v1.keras.layers.BatchNormalization(inputs=input_tensor,training=is_trainable)
 
 def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[summary]
@@ -150,7 +137,7 @@ def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes, input_tensor.get_shape().as_list()[-1], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes, input_tensor.get_shape().as_list()[-1], number_filters], names=names, dtypes=tf.float32)
 
     layer = tf.nn.conv1d(value=input_tensor, filters=weight, stride=stride_sizes[0], padding=paddings, use_cudnn_on_gpu=True, data_format=None, name='conv_1d_'+names)
 
@@ -200,7 +187,7 @@ def convolution_2d(input_tensor, number_filters, kernel_sizes=(3,3), stride_size
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names, dtypes=tf.float32)
 
     layer = tf.nn.conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, use_cudnn_on_gpu=True,
                          data_format='NHWC', dilations=[1, 1, 1, 1], name='conv_2d_'+names)
@@ -251,7 +238,7 @@ def convolution_3d(input_tensor, number_filters, kernel_sizes=(3,3,3), stride_si
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names, dtypes=tf.float32)
 
     layer = tf.nn.conv3d(input,filter,strides=[stride_sizes[0],stride_sizes[1],stride_sizes],padding=paddings,data_format='NDHWC',dilations=[1, 1, 1, 1, 1],name='conv_3d_'+names)
     
@@ -302,7 +289,7 @@ def depthwise_convolution_2d(input_tensor, number_filters=1, kernel_sizes=(3,3),
     else:
         paddings = 'SAME'
 
-    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names)
+    weight = new_weights(shapes=[kernel_sizes[0], kernel_sizes[1], input_tensor.get_shape().as_list()[-1], number_filters], names=names, dtypes=tf.float32)
 
     layer = tf.nn.depthwise_conv2d(input=input_tensor, filter=weight, strides=[stride_sizes[0], stride_sizes[1]], padding=paddings, rate=None, name='deptwise_conv_2d_'+names, data_format=None )
 

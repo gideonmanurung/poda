@@ -72,7 +72,7 @@ class InceptionV4(object):
                 max_pool_2 = max_pool_2d(input_tensor=concat_2, pool_sizes=(3,3), stride_sizes=(2,2), paddingss='VALID', names='0b_3x3')
             
             with tf.compat.v1.variable_scope('Concatenate_3'):
-            concat_3 = concatenate(list_tensor=[max_pool_2,conv_11], axis=-1, names='maxpool_3x3_conv_3x3')
+                concat_3 = concatenate(list_tensor=[max_pool_2,conv_11], axis=-1, names='maxpool_3x3_conv_3x3')
         return concat_3
     
     # Inception A

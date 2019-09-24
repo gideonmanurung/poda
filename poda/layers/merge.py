@@ -52,14 +52,7 @@ def flatten(input_tensor, names=None):
     Returns:
         [Tensor] -- [Flatten tensor]
     """
-    if names!=None:
-        names = str(names)
-    else:
-        names = 'flatten'
-        
-    # Insert name future
-    flatten_tensor = tf.contrib.layers.flatten(input_tensor)
-    return flatten_tensor
+    return tf.compat.v2.keras.layers.Flatten()(input_tensor)
 
 def maximum(input_tensor_1, input_tensor_2, names=None):
     """[summary]

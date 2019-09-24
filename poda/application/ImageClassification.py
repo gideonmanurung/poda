@@ -72,6 +72,7 @@ class ImageClassification(object):
             else:
                 non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
                                                                        num_fully_connected_layer=num_dense_layer,num_hidden_unit=num_hidden_unit,activation_fully_connected=activation_dense,regularizers=regularizer)
+        """
         elif self.type_architecture in 'inception_v4_slim':
             if len(dict_architecture) > 0:
                 inception_a = dict_architecture['n_inception_a']
@@ -100,7 +101,7 @@ class ImageClassification(object):
             else:
                 non_logit, output, base_var_list, full_var_list = inception_v4(inputs=self.input_tensor,  num_classes=self.classes,final_endpoint='Mixed_7d',is_training=batch_normalization,dropout_keep_prob=dropout_rate,
                                                                                 num_depthwise_layer=None,regularizers=regularizer)
-
+            """
         return non_logit, output, base_var_list, full_var_list
 
     def train(self, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False, use_pretrain = False, path_pretrained='', threshold_best_model=0.5, optimizers_name='adam', lr=0.0001):
@@ -168,6 +169,9 @@ class ImageClassification(object):
         if not os.path.exists(main_graph_saver_path):
             os.makedirs(main_graph_saver_path)
 
+        base_model_path = os.path.join(main_graph_saver_path,"base_"+str(self.type_architecture))
+        full_model_path = os.path.join(output_saver_path,str(self.type_architecture))
+
         msg = "Epoch: {0:>6} loss: {1:>6.3} - acc: {2:>6.3} - val_loss: {3:>6.3} - val_acc: {4:>6.3} - {5}"
         
         train_iteration = int(num_train_data/self.batch_size)
@@ -183,12 +187,12 @@ class ImageClassification(object):
             sess.run(init)
             
             if is_last_checkpoint:
-                loader_output = tf.compat.v1.train.import_meta_graph(output_saver_path + '.meta')
+                loader_output = tf.compat.v1.train.import_meta_graph(full_model_path + '.meta')
                 loader_output.restore(sess, output_saver_path)
                 #output_saver.restore(sess,output_saver_path)
 
             if use_pretrain:
-                loader_main_graph = tf.compat.v1.train.import_meta_graph(main_graph_saver_path + '.meta')
+                loader_main_graph = tf.compat.v1.train.import_meta_graph(base_model_path + '.meta')
                 loader_main_graph.restore(sess, main_graph_saver_path)
                 #main_graph_saver.restore(sess,main_graph_saver_path)            
             
@@ -232,8 +236,6 @@ class ImageClassification(object):
                 avg_val_acc = sum(tmp_val_acc)/(len(tmp_val_acc)+0.0001)
                     
                 if avg_val_acc > best_val_accuracy:
-                    base_model_path = os.path.join(main_graph_saver_path,"base_"+str(self.type_architecture))
-                    full_model_path = os.path.join(output_saver_path,str(self.type_architecture))
                     main_graph_saver.save(sess=sess,save_path=base_model_path)
                     output_saver.save(sess=sess,save_path=full_model_path)
                     best_val_accuracy = avg_val_acc

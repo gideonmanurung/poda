@@ -41,7 +41,7 @@ from poda.utils import *
 slim = tf.contrib.slim
 
 def build_base_layer_model(input_tensor,num_blocks=5,scope='vgg_16'):
-    with tf.variable_scope(scope, 'vgg_16', [input_tensor]) as sc:
+    with tf.compat.v1.variable_scope(scope, 'vgg_16', [input_tensor]) as sc:
         end_points_collection = sc.original_name_scope + '_end_points'
         # Collect outputs for conv2d, fully_connected and max_pool2d.
         with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d],outputs_collections=end_points_collection):
@@ -100,11 +100,11 @@ def build_top_layer_model(base_layer,num_depthwise_layer=None,
     
 def vgg16(input_tensor,num_classes=1000,num_blocks=5,num_depthwise_layer=None,num_fully_connected_layer=1,num_hidden_unit=512,activation_fully_connected=None,regularizers=None):
     net = build_base_layer_model(input_tensor=input_tensor,num_blocks=num_blocks)
-    base_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    base_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
     non_logit , output = build_top_layer_model(net,num_depthwise_layer=num_depthwise_layer,num_fully_connected_layer=num_fully_connected_layer,num_hidden_unit=num_hidden_unit,
                                                activation_fully_connected=activation_fully_connected,regularizers=regularizers,num_classes=num_classes)
 
-    full_var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+    full_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
 
     return non_logit , output , base_var_list , full_var_list
 
