@@ -72,7 +72,7 @@ class ImageClassification(object):
             else:
                 non_logit , output , base_var_list , full_var_list = vgg16(input_tensor=self.input_tensor,num_classes=self.classes,num_blocks=num_block,num_depthwise_layer=num_depthwise_layer,
                                                                        num_fully_connected_layer=num_dense_layer,num_hidden_unit=num_hidden_unit,activation_fully_connected=activation_dense,regularizers=regularizer)
-        """
+        
         elif self.type_architecture in 'inception_v4_slim':
             if len(dict_architecture) > 0:
                 inception_a = dict_architecture['n_inception_a']
@@ -94,14 +94,36 @@ class ImageClassification(object):
             if self.type_architecture == 'inception_v4':
                 model = InceptionV4(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
                                     dropout_rates=dropout_rate, regularizers=regularizer, scopes=scope)
-                non_logit, output, base_var_list, full_var_list = model.create_model()    
-            elif self.type_architecture == 'inception_resnet_v2':
-                model = InceptionResnetV2(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
-                                    dropout_rates=None, regularizers=None, scopes=None)
+                non_logit, output, base_var_list, full_var_list = model.create_model()
             else:
                 non_logit, output, base_var_list, full_var_list = inception_v4(inputs=self.input_tensor,  num_classes=self.classes,final_endpoint='Mixed_7d',is_training=batch_normalization,dropout_keep_prob=dropout_rate,
-                                                                                num_depthwise_layer=None,regularizers=regularizer)
-            """
+                                                                                num_depthwise_layer=None,regularizers=regularizer)  
+        elif self.type_architecture == 'inception_resnet_v2_slim':
+            if len(dict_architecture) > 0:
+                inception_a = dict_architecture['n_inception_a']
+                inception_b = dict_architecture['n_inception_b']
+                inception_c = dict_architecture['n_inception_c']
+                batch_normalization = dict_architecture['batch_normalizations']
+                dropout_rate = dict_architecture['dropout_rates']
+                regularizer = dict_architecture['regularizers']
+                scope = dict_architecture['scopes']
+            else:
+                inception_a = 5
+                inception_b = 10
+                inception_c = 5
+                batch_normalization = True
+                dropout_rate = None
+                regularizer = None
+                scope = None
+
+            if self.type_architecture == 'inception_resnet_v2':
+                model = InceptionResnetV2(input_tensor=self.input_tensor, n_inception_a=inception_a, n_inception_b=inception_b, n_inception_c=inception_c, classes=self.classes, batch_normalizations = batch_normalization, 
+                                    dropout_rates=None, regularizers=None, scopes=None)
+                non_logit, output, base_var_list, full_var_list = model.create_model()
+            else:
+                non_logit, output, base_var_list, full_var_list = None, None, None, None
+            
+
         return non_logit, output, base_var_list, full_var_list
 
     def train(self, epoch, output_model_path, dict_augmented_image={}, is_last_checkpoint=False, manual_split_dataset= False, use_pretrain = False, path_pretrained='', threshold_best_model=0.5, optimizers_name='adam', lr=0.0001):
@@ -188,14 +210,12 @@ class ImageClassification(object):
             
             if is_last_checkpoint:
                 loader_output = tf.compat.v1.train.import_meta_graph(full_model_path + '.meta')
-                loader_output.restore(sess, output_saver_path)
-                #output_saver.restore(sess,output_saver_path)
-
+                loader_output.restore(sess, full_model_path)
+                
             if use_pretrain:
                 loader_main_graph = tf.compat.v1.train.import_meta_graph(base_model_path + '.meta')
-                loader_main_graph.restore(sess, main_graph_saver_path)
-                #main_graph_saver.restore(sess,main_graph_saver_path)            
-            
+                loader_main_graph.restore(sess, base_model_path)
+                
             best_val_accuracy = threshold_best_model
             for i in range(epoch):
                 print('Epoch '+str(i+1)+'/'+str(epoch))

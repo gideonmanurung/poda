@@ -105,7 +105,8 @@ def batch_normalization(input_tensor, is_trainable=True):
     Returns:
         [Tensor] -- [A trainable tensor]
     """
-    return tf.compat.v1.keras.layers.BatchNormalization(inputs=input_tensor,training=is_trainable)
+    bn = tf.compat.v1.keras.layers.BatchNormalization()
+    return bn(inputs=input_tensor,training=is_trainable)
 
 def convolution_1d(input_tensor, number_filters, kernel_sizes=3, stride_sizes=(1,1), paddings='same', activations='relu', batch_normalizations=False, dropout_rates=None, names=None):
     """[summary]
