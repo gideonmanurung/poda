@@ -5,3 +5,4 @@ dist/
 checkpoint/
 env
 poda-*
+.vscode

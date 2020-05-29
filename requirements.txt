@@ -1,2 +1,4 @@
-imutils
 numpy
+imutils
+tensorflow==1.15.1
+opencv-python
